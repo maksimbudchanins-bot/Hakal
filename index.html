@@ -16,8 +16,9 @@
     </header>
 
     <main>
-      <div class="canvas-container">
+      <div class="canvas-container" id="canvasContainer">
         <canvas id="imageCanvas"></canvas>
+        <img id="previewImage" alt="preview" style="display: none" />
       </div>
 
       <div class="controls">
@@ -52,9 +53,18 @@
           🔄 Сбросить настройки
         </button>
 
-        <button class="btn btn-secondary" id="downloadBtn">
-          📤 Поделиться результатом
-        </button>
+        <p
+          id="hint"
+          style="
+            display: none;
+            text-align: center;
+            font-size: 13px;
+            color: #a0a0a0;
+            margin: 8px 0 0 0;
+          "
+        >
+          📲 Удерживай картинку, чтобы сохранить
+        </p>
       </div>
     </main>
 
