@@ -7,9 +7,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Shakal & Color Bot</title>
-    <!-- Подключаем стили -->
     <link rel="stylesheet" href="css/style.css" />
-    <!-- Подключаем Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
   </head>
   <body>
@@ -46,13 +44,20 @@
           <input type="range" id="saturate" min="0" max="200" value="100" />
         </div>
 
+        <button
+          class="btn btn-secondary"
+          id="resetBtn"
+          style="margin-bottom: 10px"
+        >
+          🔄 Сбросить настройки
+        </button>
+
         <button class="btn btn-secondary" id="downloadBtn">
           💾 Скачать результат
         </button>
       </div>
     </main>
 
-    <!-- Подключаем скрипты -->
     <script src="js/app.js"></script>
   </body>
 </html>

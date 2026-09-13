@@ -12,6 +12,7 @@ const ctx = canvas.getContext("2d");
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const downloadBtn = document.getElementById("downloadBtn");
+const resetBtn = document.getElementById("resetBtn");
 
 // Элементы управления
 const shakalSlider = document.getElementById("shakal");
@@ -119,4 +120,15 @@ downloadBtn.addEventListener("click", () => {
   link.download = "shakal_art.png";
   link.href = canvas.toDataURL("image/png");
   link.click();
+});
+
+// 8. Кнопка сброса настроек
+resetBtn.addEventListener("click", () => {
+  shakalSlider.value = 1;
+  brightnessSlider.value = 100;
+  contrastSlider.value = 100;
+  saturateSlider.value = 100;
+
+  updateLabels();
+  applyEffects();
 });
