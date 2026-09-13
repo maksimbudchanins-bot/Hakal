@@ -17,13 +17,23 @@
 
     <main>
       <div class="canvas-container" id="canvasContainer">
+        <div id="placeholder" class="placeholder">
+          <div class="placeholder-icon">🖼</div>
+          <div class="placeholder-text">Нажми «Загрузить картинку»</div>
+        </div>
         <canvas id="imageCanvas"></canvas>
-        <img id="previewImage" alt="preview" style="display: none" />
       </div>
 
       <div class="controls">
         <input type="file" id="fileInput" accept="image/*" />
         <button class="btn" id="uploadBtn">📁 Загрузить картинку</button>
+
+        <div class="presets">
+          <button class="preset-btn" data-preset="meme">😹 Мем</button>
+          <button class="preset-btn" data-preset="acid">🧪 Кислота</button>
+          <button class="preset-btn" data-preset="vintage">📼 Винтаж</button>
+          <button class="preset-btn" data-preset="glitch">👾 Глитч</button>
+        </div>
 
         <div class="control-group">
           <label>Шакализация (Пиксели) <span id="valShakal">1</span></label>
@@ -45,6 +55,11 @@
           <input type="range" id="saturate" min="0" max="200" value="100" />
         </div>
 
+        <div class="control-group">
+          <label>🌈 Хроматика <span id="valChromatic">0</span>px</label>
+          <input type="range" id="chromatic" min="0" max="20" value="0" />
+        </div>
+
         <button
           class="btn btn-secondary"
           id="resetBtn"
@@ -53,18 +68,9 @@
           🔄 Сбросить настройки
         </button>
 
-        <p
-          id="hint"
-          style="
-            display: none;
-            text-align: center;
-            font-size: 13px;
-            color: #a0a0a0;
-            margin: 8px 0 0 0;
-          "
-        >
-          📲 Удерживай картинку, чтобы сохранить
-        </p>
+        <button class="btn btn-secondary" id="downloadBtn">
+          💾 Скачать результат
+        </button>
       </div>
     </main>
 
