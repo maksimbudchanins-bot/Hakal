@@ -7,8 +7,8 @@ if (tg) {
   console.log("Запущено вне Telegram");
 }
 
-// Безопасные обёртки
 const isRealTelegram = !!(tg && tg.initData);
+
 function safeAlert(message) {
   if (isRealTelegram && tg.showAlert) {
     try {
@@ -24,7 +24,6 @@ const canvas = document.getElementById("imageCanvas");
 const ctx = canvas.getContext("2d");
 const placeholder = document.getElementById("placeholder");
 const fileInput = document.getElementById("fileInput");
-const uploadBtn = document.getElementById("uploadBtn");
 const downloadBtn = document.getElementById("downloadBtn");
 const resetBtn = document.getElementById("resetBtn");
 
@@ -91,8 +90,6 @@ document.querySelectorAll(".preset-btn").forEach((btn) => {
 // ============================================
 // ЗАГРУЗКА КАРТИНКИ
 // ============================================
-
-uploadBtn.addEventListener("click", () => fileInput.click());
 
 fileInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
@@ -163,7 +160,6 @@ function applyEffects() {
   tempCanvas.height = h;
   tempCtx.drawImage(originalImage, 0, 0, w, h);
 
-  // Слой с пикселями (без фильтров)
   const pixelCanvas = document.createElement("canvas");
   const pixelCtx = pixelCanvas.getContext("2d");
   pixelCanvas.width = canvas.width;
@@ -180,34 +176,27 @@ function applyEffects() {
   colorCtx.drawImage(pixelCanvas, 0, 0);
   colorCtx.filter = "none";
 
-  // Шаг 3. Хроматическая аберрация (если > 0)
+  // Шаг 3. Хроматика
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (chromatic > 0) {
-    // Рисуем базовый слой
     ctx.drawImage(colorCanvas, 0, 0);
 
-    // Красный канал сдвигаем влево
     ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = 0.5;
+    ctx.globalAlpha = 0.3;
 
     ctx.save();
     ctx.translate(-chromatic, 0);
-    ctx.filter =
-      "url(#redFilter) brightness(150%) saturate(200%) hue-rotate(-30deg)";
     ctx.drawImage(colorCanvas, 0, 0);
     ctx.restore();
 
-    // Синий канал сдвигаем вправо
     ctx.save();
     ctx.translate(chromatic, 0);
-    ctx.filter = "brightness(150%) saturate(200%) hue-rotate(180deg)";
     ctx.drawImage(colorCanvas, 0, 0);
     ctx.restore();
 
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
-    ctx.filter = "none";
   } else {
     ctx.drawImage(colorCanvas, 0, 0);
   }
@@ -235,7 +224,25 @@ downloadBtn.addEventListener("click", () => {
 
   const imageDataUrl = canvas.toDataURL("image/png");
 
-  // ПК / браузер: обычное скачивание
+  // Пытаемся использовать нативный метод Telegram
+  if (
+    isRealTelegram &&
+    tg.isVersionAtLeast &&
+    tg.isVersionAtLeast("6.9") &&
+    tg.downloadFile
+  ) {
+    try {
+      tg.downloadFile({
+        url: imageDataUrl,
+        file_name: "shakal_art.png",
+      });
+      return;
+    } catch (err) {
+      console.warn("downloadFile не сработал, используем fallback:", err);
+    }
+  }
+
+  // Fallback: обычное скачивание
   const link = document.createElement("a");
   link.download = "shakal_art.png";
   link.href = imageDataUrl;

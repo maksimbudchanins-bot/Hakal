@@ -54,7 +54,7 @@ main {
 canvas {
   max-width: 100%;
   max-height: 400px;
-  display: block;
+  display: none;
 }
 
 .controls {
@@ -81,6 +81,7 @@ input[type="file"] {
 }
 
 .btn {
+  display: block;
   background-color: var(--tg-theme-button-color);
   color: var(--tg-theme-button-text-color);
   border: none;
@@ -92,6 +93,8 @@ input[type="file"] {
   cursor: pointer;
   margin-bottom: 10px;
   text-align: center;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:active {
@@ -178,25 +181,6 @@ input[type="range"]:focus {
   outline: none;
 }
 
-.canvas-container {
-  position: relative;
-}
-
-#previewImage {
-  max-width: 100%;
-  max-height: 400px;
-  display: block;
-  border-radius: 12px;
-  -webkit-touch-callout: default;
-  -webkit-user-select: auto;
-  user-select: auto;
-}
-
-/* Скрываем canvas, но оставляем для расчётов */
-#imageCanvas {
-  display: none;
-}
-
 /* ============================================
    ПЛЕЙСХОЛДЕР
    ============================================ */
@@ -249,6 +233,7 @@ input[type="range"]:focus {
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .preset-btn:hover {
@@ -259,12 +244,4 @@ input[type="range"]:focus {
 .preset-btn:active {
   transform: scale(0.95);
   background: rgba(82, 136, 193, 0.15);
-}
-
-/* Обновлённый блок превью */
-#previewImage {
-  max-width: 100%;
-  max-height: 400px;
-  display: block;
-  border-radius: 12px;
 }
