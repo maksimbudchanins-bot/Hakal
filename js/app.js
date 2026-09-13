@@ -1,7 +1,7 @@
 // Инициализация Telegram Web App
 const tg = window.Telegram?.WebApp;
 if (tg) {
-  tg.expand(); // Разворачиваем на весь экран
+  tg.expand();
   console.log("Telegram WebApp version:", tg.version);
 } else {
   console.log("Запущено вне Telegram. Работаем в режиме отладки.");
@@ -82,7 +82,6 @@ function applyEffects() {
   const contrast = contrastSlider.value;
   const saturate = saturateSlider.value;
 
-  // Создаем временный canvas для шакализации
   const tempCanvas = document.createElement("canvas");
   const tempCtx = tempCanvas.getContext("2d");
 
@@ -93,56 +92,60 @@ function applyEffects() {
   tempCanvas.width = w;
   tempCanvas.height = h;
 
-  // Рисуем уменьшенную картинку
   tempCtx.drawImage(originalImage, 0, 0, w, h);
 
-  // Очищаем основной canvas и применяем цветокоррекцию
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%)`;
-
-  // Отключаем сглаживание для эффекта пикселей
   ctx.imageSmoothingEnabled = false;
-
-  // Растягиваем уменьшенную картинку обратно
   ctx.drawImage(tempCanvas, 0, 0, w, h, 0, 0, canvas.width, canvas.height);
-
-  // Сбрасываем фильтр
   ctx.filter = "none";
 }
 
-// 7. Скачивание результата (нативный способ для Telegram + fallback для браузера)
-downloadBtn.addEventListener("click", () => {
+// 7. Поделиться / сохранить результат (Web Share API + fallback)
+downloadBtn.addEventListener("click", async () => {
   if (!isImageLoaded) {
     if (tg) tg.showAlert("Сначала загрузите картинку!");
     else alert("Сначала загрузите картинку!");
     return;
   }
 
-  const imageDataUrl = canvas.toDataURL("image/png");
-
-  // Проверяем, поддерживает ли Telegram метод downloadFile (версия 6.9+)
-  if (
-    tg &&
-    tg.isVersionAtLeast &&
-    tg.isVersionAtLeast("6.9") &&
-    tg.downloadFile
-  ) {
-    try {
-      tg.downloadFile({
-        url: imageDataUrl,
-        file_name: "shakal_art.png",
-      });
-    } catch (err) {
-      console.error("Ошибка downloadFile:", err);
-      tg.showAlert("Не удалось скачать. Попробуйте ещё раз.");
+  // Конвертируем canvas в Blob
+  canvas.toBlob(async (blob) => {
+    if (!blob) {
+      if (tg) tg.showAlert("Не удалось создать файл.");
+      return;
     }
-  } else {
-    // Fallback для браузера (работает на ПК)
-    const link = document.createElement("a");
-    link.download = "shakal_art.png";
-    link.href = imageDataUrl;
-    link.click();
-  }
+
+    const file = new File([blob], "shakal_art.png", { type: "image/png" });
+
+    // Проверяем поддержку Web Share API с файлами
+    const canShareFiles =
+      navigator.canShare && navigator.canShare({ files: [file] });
+
+    if (navigator.share && canShareFiles) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: "Shakal Art",
+          text: "🎨 Сделано в Shakal & Color Bot",
+        });
+      } catch (err) {
+        // Пользователь отменил — это не ошибка
+        if (err.name !== "AbortError") {
+          console.error("Ошибка share:", err);
+          if (tg) tg.showAlert("Не удалось поделиться. Попробуйте ещё раз.");
+        }
+      }
+    } else {
+      // Fallback: скачивание через ссылку (работает на ПК)
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = "shakal_art.png";
+      link.href = url;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+  }, "image/png");
 });
 
 // 8. Кнопка сброса настроек
