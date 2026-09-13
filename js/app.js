@@ -2,6 +2,7 @@
 const tg = window.Telegram?.WebApp;
 if (tg) {
   tg.expand(); // Разворачиваем на весь экран
+  console.log("Telegram WebApp version:", tg.version);
 } else {
   console.log("Запущено вне Telegram. Работаем в режиме отладки.");
 }
@@ -109,17 +110,39 @@ function applyEffects() {
   ctx.filter = "none";
 }
 
-// 7. Скачивание результата
+// 7. Скачивание результата (нативный способ для Telegram + fallback для браузера)
 downloadBtn.addEventListener("click", () => {
   if (!isImageLoaded) {
     if (tg) tg.showAlert("Сначала загрузите картинку!");
     else alert("Сначала загрузите картинку!");
     return;
   }
-  const link = document.createElement("a");
-  link.download = "shakal_art.png";
-  link.href = canvas.toDataURL("image/png");
-  link.click();
+
+  const imageDataUrl = canvas.toDataURL("image/png");
+
+  // Проверяем, поддерживает ли Telegram метод downloadFile (версия 6.9+)
+  if (
+    tg &&
+    tg.isVersionAtLeast &&
+    tg.isVersionAtLeast("6.9") &&
+    tg.downloadFile
+  ) {
+    try {
+      tg.downloadFile({
+        url: imageDataUrl,
+        file_name: "shakal_art.png",
+      });
+    } catch (err) {
+      console.error("Ошибка downloadFile:", err);
+      tg.showAlert("Не удалось скачать. Попробуйте ещё раз.");
+    }
+  } else {
+    // Fallback для браузера (работает на ПК)
+    const link = document.createElement("a");
+    link.download = "shakal_art.png";
+    link.href = imageDataUrl;
+    link.click();
+  }
 });
 
 // 8. Кнопка сброса настроек
