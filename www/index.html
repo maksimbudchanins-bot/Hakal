@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Shakal & Color Bot</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  </head>
+  <body>
+    <header>
+      <h2>🎨 Шакал & Цветокор</h2>
+    </header>
+
+    <main>
+      <div class="canvas-container" id="canvasContainer">
+        <div id="placeholder" class="placeholder">
+          <div class="placeholder-icon">🖼</div>
+          <div class="placeholder-text">Нажми «Загрузить картинку»</div>
+        </div>
+        <canvas id="imageCanvas"></canvas>
+      </div>
+
+      <div class="controls">
+        <input type="file" id="fileInput" accept="image/*" />
+        <label for="fileInput" class="btn" id="uploadBtn"
+          >📁 Загрузить картинку</label
+        >
+
+        <div class="presets">
+          <button class="preset-btn" data-preset="meme">😹 Мем</button>
+          <button class="preset-btn" data-preset="acid">🧪 Кислота</button>
+          <button class="preset-btn" data-preset="vintage">📼 Винтаж</button>
+          <button class="preset-btn" data-preset="glitch">👾 Глитч</button>
+        </div>
+
+        <div class="control-group">
+          <label>Шакализация (Пиксели) <span id="valShakal">1</span></label>
+          <input type="range" id="shakal" min="1" max="50" value="1" />
+        </div>
+
+        <div class="control-group">
+          <label>Яркость <span id="valBrightness">100</span>%</label>
+          <input type="range" id="brightness" min="0" max="200" value="100" />
+        </div>
+
+        <div class="control-group">
+          <label>Контраст <span id="valContrast">100</span>%</label>
+          <input type="range" id="contrast" min="0" max="200" value="100" />
+        </div>
+
+        <div class="control-group">
+          <label>Насыщенность <span id="valSaturate">100</span>%</label>
+          <input type="range" id="saturate" min="0" max="200" value="100" />
+        </div>
+
+        <div class="control-group">
+          <label>🌈 Хроматика <span id="valChromatic">0</span>px</label>
+          <input type="range" id="chromatic" min="0" max="20" value="0" />
+        </div>
+
+        <button
+          class="btn btn-secondary"
+          id="resetBtn"
+          style="margin-bottom: 10px"
+        >
+          🔄 Сбросить настройки
+        </button>
+
+        <button class="btn btn-secondary" id="downloadBtn">
+          💾 Скачать результат
+        </button>
+      </div>
+    </main>
+
+    <script src="js/app.js"></script>
+  </body>
+</html>
