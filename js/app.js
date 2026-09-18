@@ -1,10 +1,18 @@
-// Инициализация Telegram Web App
-const tg = window.Telegram?.WebApp;
-if (tg) {
+// Заглушка для Telegram (чтобы код не падал вне Mini App)
+const tg = window.Telegram?.WebApp || {
+  expand: () => {},
+  close: () => {},
+  showAlert: null,
+  isVersionAtLeast: () => false,
+  platform: "unknown",
+  initData: "",
+};
+
+if (window.Telegram?.WebApp) {
   tg.expand();
-  console.log("Telegram WebApp version:", tg.version);
+  console.log("✅ Telegram WebApp version:", tg.version);
 } else {
-  console.log("Запущено вне Telegram");
+  console.log("📱 Запущено вне Telegram (APK или браузер)");
 }
 
 const isRealTelegram = !!(tg && tg.initData);
