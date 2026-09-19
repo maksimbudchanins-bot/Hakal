@@ -26,6 +26,11 @@
         <div class="canvas-hint" id="canvasHint" style="display: none">
           👆 Тап — на весь экран
         </div>
+
+        <!-- ТУЛТИП-ПОДСКАЗКА -->
+        <div class="coach-tooltip" id="coachTooltip" style="display: none">
+          ✌️ Двумя пальцами — крутить и масштабировать
+        </div>
       </div>
 
       <div class="controls">
@@ -185,6 +190,7 @@
         <button class="text-tab" data-tab="color">Цвет</button>
         <button class="text-tab" data-tab="stroke">Обводка</button>
         <button class="text-tab" data-tab="shadow">Тень</button>
+        <button class="text-tab" data-tab="transform">Формат</button>
       </div>
 
       <div class="text-tab-content active" data-content="font">
@@ -363,6 +369,36 @@
               +
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- ВКЛАДКА ФОРМАТ -->
+      <div class="text-tab-content" data-content="transform">
+        <div class="row-control">
+          <span>↻ Поворот</span>
+          <div class="mini-stepper">
+            <button
+              class="mini-step-btn"
+              data-text-prop="rotation"
+              data-dir="-1"
+            >
+              ↺
+            </button>
+            <span id="valRotation">0°</span>
+            <button
+              class="mini-step-btn"
+              data-text-prop="rotation"
+              data-dir="1"
+            >
+              ↻
+            </button>
+          </div>
+        </div>
+        <button class="btn-mini" id="resetRotationBtn">
+          ⟲ Сбросить поворот
+        </button>
+        <div class="hint-text">
+          💡 Или крутите текст двумя пальцами прямо на картинке
         </div>
       </div>
 

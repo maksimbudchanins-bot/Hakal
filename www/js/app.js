@@ -40,6 +40,14 @@ function safeAlert(message) {
   alert(message);
 }
 
+function vibrate(pattern) {
+  if (navigator.vibrate) {
+    try {
+      navigator.vibrate(pattern);
+    } catch (e) {}
+  }
+}
+
 // ============================================
 // DOM
 // ============================================
@@ -53,6 +61,7 @@ const downloadBtn = document.getElementById("downloadBtn");
 const resetBtn = document.getElementById("resetBtn");
 const canvasContainer = document.getElementById("canvasContainer");
 const canvasHint = document.getElementById("canvasHint");
+const coachTooltip = document.getElementById("coachTooltip");
 const fullscreenPreview = document.getElementById("fullscreenPreview");
 const fullscreenCanvas = document.getElementById("fullscreenCanvas");
 const fullscreenClose = document.getElementById("fullscreenClose");
@@ -65,6 +74,7 @@ const doneTextBtn = document.getElementById("doneTextBtn");
 const autoContrastBtn = document.getElementById("autoContrastBtn");
 const strokeToggle = document.getElementById("strokeToggle");
 const shadowToggle = document.getElementById("shadowToggle");
+const resetRotationBtn = document.getElementById("resetRotationBtn");
 
 const shakalInput = document.getElementById("shakal");
 const brightnessInput = document.getElementById("brightness");
@@ -384,7 +394,7 @@ function applyEffects() {
 }
 
 // ============================================
-// ТЕКСТ
+// ТЕКСТ С ПОВОРОТОМ
 // ============================================
 function drawText() {
   if (!isImageLoaded) return;
@@ -395,6 +405,12 @@ function drawText() {
   if (!currentText || !currentText.value) return;
 
   const t = currentText;
+  overlayCtx.save();
+
+  // Поворот вокруг центра текста
+  overlayCtx.translate(t.x, t.y);
+  overlayCtx.rotate((t.rotation * Math.PI) / 180);
+
   overlayCtx.font = `${t.fontSize}px "${t.font}", Arial, sans-serif`;
   overlayCtx.textAlign = "center";
   overlayCtx.textBaseline = "middle";
@@ -415,19 +431,18 @@ function drawText() {
     overlayCtx.strokeStyle = t.strokeColor;
     overlayCtx.lineWidth = t.strokeWidth;
     overlayCtx.lineJoin = "round";
-    overlayCtx.strokeText(t.value, t.x, t.y);
+    overlayCtx.strokeText(t.value, 0, 0);
   }
 
   overlayCtx.fillStyle = t.color;
-  overlayCtx.fillText(t.value, t.x, t.y);
+  overlayCtx.fillText(t.value, 0, 0);
 
-  overlayCtx.shadowColor = "transparent";
-  overlayCtx.shadowBlur = 0;
-  overlayCtx.shadowOffsetX = 0;
-  overlayCtx.shadowOffsetY = 0;
+  overlayCtx.restore();
 }
 
-// Перетаскивание
+// ============================================
+// ВЗАИМОДЕЙСТВИЕ
+// ============================================
 let isDraggingText = false;
 let dragStartX = 0,
   dragStartY = 0,
@@ -435,6 +450,9 @@ let dragStartX = 0,
   textStartY = 0;
 let initialPinchDistance = 0,
   initialFontSize = 48;
+let initialPinchAngle = 0,
+  initialRotation = 0;
+let hasShownTooltip = false;
 
 function getTouchPos(e, canvasEl) {
   const rect = canvasEl.getBoundingClientRect();
@@ -453,11 +471,23 @@ function getPinchDistance(e) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+function getPinchAngle(e) {
+  const dx = e.touches[1].clientX - e.touches[0].clientX;
+  const dy = e.touches[1].clientY - e.touches[0].clientY;
+  return Math.atan2(dy, dx) * (180 / Math.PI);
+}
+
 overlayCanvas.addEventListener(
   "touchstart",
   (e) => {
     if (!currentText || !isTextEditing) return;
     e.preventDefault();
+
+    // Скрываем тултип при первом жесте
+    if (!hasShownTooltip && coachTooltip.style.display !== "none") {
+      coachTooltip.style.display = "none";
+      hasShownTooltip = true;
+    }
 
     if (e.touches.length === 1) {
       isDraggingText = true;
@@ -470,6 +500,8 @@ overlayCanvas.addEventListener(
       isDraggingText = false;
       initialPinchDistance = getPinchDistance(e);
       initialFontSize = currentText.fontSize;
+      initialPinchAngle = getPinchAngle(e);
+      initialRotation = currentText.rotation || 0;
     }
   },
   { passive: false },
@@ -487,6 +519,7 @@ overlayCanvas.addEventListener(
       currentText.y = textStartY + (pos.y - dragStartY);
       drawText();
     } else if (e.touches.length === 2 && initialPinchDistance > 0) {
+      // Масштаб
       const newDistance = getPinchDistance(e);
       const scale = newDistance / initialPinchDistance;
       currentText.fontSize = Math.max(
@@ -495,6 +528,28 @@ overlayCanvas.addEventListener(
       );
       const fontSizeEl = document.getElementById("valFontSize");
       if (fontSizeEl) fontSizeEl.innerText = currentText.fontSize;
+
+      // Поворот
+      const currentAngle = getPinchAngle(e);
+      const angleDiff = currentAngle - initialPinchAngle;
+      currentText.rotation = (initialRotation + angleDiff) % 360;
+      const rotationEl = document.getElementById("valRotation");
+      if (rotationEl)
+        rotationEl.innerText = Math.round(currentText.rotation) + "°";
+
+      // Haptic каждые ~15°
+      const roundedAngle = Math.round(currentText.rotation / 15) * 15;
+      if (roundedAngle !== currentText._lastHapticAngle) {
+        currentText._lastHapticAngle = roundedAngle;
+        // Особенно сильная вибрация на 0, 90, 180, 270
+        const abs = Math.abs(roundedAngle % 360);
+        if (abs === 0 || abs === 90 || abs === 180 || abs === 270) {
+          vibrate([30, 20, 30]);
+        } else {
+          vibrate(10);
+        }
+      }
+
       drawText();
     }
   },
@@ -504,6 +559,7 @@ overlayCanvas.addEventListener(
 overlayCanvas.addEventListener("touchend", () => {
   isDraggingText = false;
   initialPinchDistance = 0;
+  initialPinchAngle = 0;
 });
 
 overlayCanvas.addEventListener("mousedown", (e) => {
@@ -547,6 +603,7 @@ addTextBtn.addEventListener("click", () => {
     x: canvas.width / 2,
     y: canvas.height / 2,
     fontSize: 60,
+    rotation: 0,
     font: "Impact",
     color: "#ffffff",
     strokeEnabled: true,
@@ -555,6 +612,7 @@ addTextBtn.addEventListener("click", () => {
     shadowEnabled: true,
     shadowOffset: 4,
     shadowBlur: 4,
+    _lastHapticAngle: 0,
   };
 
   textInput.value = currentText.value;
@@ -563,6 +621,7 @@ addTextBtn.addEventListener("click", () => {
   document.getElementById("valShadowOffset").innerText =
     currentText.shadowOffset;
   document.getElementById("valShadowBlur").innerText = currentText.shadowBlur;
+  document.getElementById("valRotation").innerText = "0°";
 
   strokeToggle.classList.toggle("active", currentText.strokeEnabled);
   shadowToggle.classList.toggle("active", currentText.shadowEnabled);
@@ -576,6 +635,18 @@ addTextBtn.addEventListener("click", () => {
   textEditor.style.display = "block";
   isTextEditing = true;
   document.body.classList.add("text-editing");
+
+  // Показываем тултип при первом добавлении
+  if (!hasShownTooltip) {
+    coachTooltip.style.display = "block";
+    setTimeout(() => {
+      if (coachTooltip.style.display !== "none") {
+        coachTooltip.style.display = "none";
+        hasShownTooltip = true;
+      }
+    }, 5000);
+  }
+
   drawText();
 });
 
@@ -597,14 +668,14 @@ document.querySelectorAll(".font-btn").forEach((btn) => {
   });
 });
 
-// МИНИ-СТЕППЕРЫ (с удержанием)
+// МИНИ-СТЕППЕРЫ
 const miniHoldTimers = {};
 
 function changeTextProp(btn) {
   if (!currentText) return;
   const prop = btn.dataset.textProp;
   const dir = parseInt(btn.dataset.dir);
-  const step = prop === "fontSize" ? 5 : 1;
+  const step = prop === "fontSize" ? 5 : prop === "rotation" ? 5 : 1;
 
   if (prop === "fontSize") {
     currentText.fontSize = Math.max(
@@ -632,6 +703,10 @@ function changeTextProp(btn) {
       Math.min(20, currentText.shadowBlur + dir * step),
     );
     document.getElementById("valShadowBlur").innerText = currentText.shadowBlur;
+  } else if (prop === "rotation") {
+    currentText.rotation = (currentText.rotation + dir * step) % 360;
+    document.getElementById("valRotation").innerText =
+      Math.round(currentText.rotation) + "°";
   }
   drawText();
 }
@@ -679,6 +754,15 @@ document.querySelectorAll(".mini-step-btn").forEach((btn) => {
   });
   btn.addEventListener("mouseup", () => stopMiniHold(timerKey));
   btn.addEventListener("mouseleave", () => stopMiniHold(timerKey));
+});
+
+// Кнопка сброса поворота
+resetRotationBtn.addEventListener("click", () => {
+  if (!currentText) return;
+  currentText.rotation = 0;
+  document.getElementById("valRotation").innerText = "0°";
+  vibrate(20);
+  drawText();
 });
 
 document.querySelectorAll(".color-swatch[data-color]").forEach((swatch) => {
@@ -756,15 +840,14 @@ document.querySelectorAll(".text-tab").forEach((tab) => {
   });
 });
 
-// ГОТОВО — ЗАКРЫВАЕТ РЕЖИМ РЕДАКТИРОВАНИЯ
 doneTextBtn.addEventListener("click", () => {
-  log("Закрываю редактор текста (текст зафиксирован)");
+  log("Закрываю редактор текста");
   textEditor.style.display = "none";
   isTextEditing = false;
   document.body.classList.remove("text-editing");
+  coachTooltip.style.display = "none";
 });
 
-// УДАЛИТЬ
 deleteTextBtn.addEventListener("click", () => {
   log("Удаляю текст");
   currentText = null;
@@ -772,10 +855,11 @@ deleteTextBtn.addEventListener("click", () => {
   textEditor.style.display = "none";
   isTextEditing = false;
   document.body.classList.remove("text-editing");
+  coachTooltip.style.display = "none";
 });
 
 // ============================================
-// МОДАЛКА ПОЛНОЭКРАННОГО ПРОСМОТРА
+// МОДАЛКА
 // ============================================
 function openFullscreen() {
   if (!isImageLoaded) return;
@@ -795,7 +879,6 @@ function closeFullscreen() {
   fullscreenPreview.style.display = "none";
 }
 
-// Тап по canvas — только если не редактируем текст
 canvasContainer.addEventListener("click", () => {
   if (isTextEditing) return;
   openFullscreen();
@@ -831,6 +914,7 @@ resetBtn.addEventListener("click", () => {
   textEditor.style.display = "none";
   isTextEditing = false;
   document.body.classList.remove("text-editing");
+  coachTooltip.style.display = "none";
 
   applyEffects();
 });

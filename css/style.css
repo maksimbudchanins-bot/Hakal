@@ -44,10 +44,8 @@ main {
   align-items: center;
 }
 
-/* CANVAS */
 .canvas-container {
-  position: sticky;
-  top: 0;
+  position: relative;
   width: 100%;
   background: #000;
   border-radius: 16px;
@@ -74,7 +72,6 @@ canvas#imageCanvas {
   pointer-events: none;
 }
 
-/* OVERLAY canvas по умолчанию НЕ перехватывает касания */
 .overlay-canvas {
   position: absolute;
   top: 0;
@@ -84,13 +81,11 @@ canvas#imageCanvas {
   pointer-events: none;
 }
 
-/* Overlay активен ТОЛЬКО при редактировании текста */
 body.text-editing .overlay-canvas {
   pointer-events: auto;
   touch-action: none;
 }
 
-/* Блокируем скролл при редактировании текста */
 body.text-editing {
   overflow: hidden;
   touch-action: none;
@@ -106,6 +101,34 @@ body.text-editing {
   border-radius: 10px;
   font-size: 11px;
   pointer-events: none;
+}
+
+/* ТУЛТИП */
+.coach-tooltip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 140, 66, 0.95);
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tooltipPulse 1.5s ease infinite;
+  z-index: 20;
+}
+
+@keyframes tooltipPulse {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
 }
 
 .controls {
@@ -177,7 +200,6 @@ input[type="file"] {
   border-radius: 10px;
 }
 
-/* STEPPERS */
 .stepper {
   display: flex;
   align-items: center;
@@ -232,7 +254,6 @@ input[type="file"] {
   -webkit-user-select: none;
 }
 
-/* PLACEHOLDER */
 .placeholder {
   display: flex;
   flex-direction: column;
@@ -256,7 +277,6 @@ input[type="file"] {
   display: none;
 }
 
-/* PRESETS */
 .presets {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -284,7 +304,6 @@ input[type="file"] {
   color: var(--accent);
 }
 
-/* FULLSCREEN */
 .fullscreen-preview {
   position: fixed;
   top: 0;
@@ -340,7 +359,6 @@ input[type="file"] {
   transform: scale(0.9);
 }
 
-/* TEXT EDITOR */
 .text-editor {
   position: fixed;
   bottom: 0;
@@ -381,20 +399,23 @@ input[type="file"] {
   background: var(--bg);
   border-radius: 10px;
   padding: 4px;
+  overflow-x: auto;
 }
 
 .text-tab {
   flex: 1;
+  min-width: 60px;
   background: transparent;
   border: none;
   color: var(--text-dim);
   padding: 8px 4px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .text-tab.active {
@@ -493,7 +514,7 @@ input[type="file"] {
 }
 
 .mini-stepper span {
-  min-width: 40px;
+  min-width: 50px;
   text-align: center;
   color: var(--accent);
   font-weight: bold;
@@ -561,6 +582,16 @@ input[type="file"] {
   background: var(--accent);
   border-color: var(--accent);
   color: #ffffff;
+}
+
+.hint-text {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 8px;
+  background: var(--bg);
+  border-radius: 8px;
+  margin-top: 8px;
 }
 
 .text-editor-actions {
