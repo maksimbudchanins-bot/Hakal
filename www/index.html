@@ -22,18 +22,19 @@
           <div class="placeholder-text">Нажми «Загрузить картинку»</div>
         </div>
         <canvas id="imageCanvas"></canvas>
+        <div class="canvas-hint" id="canvasHint" style="display: none">
+          👆 Тап — на весь экран
+        </div>
       </div>
 
       <div class="controls">
         <input type="file" id="fileInput" accept="image/*" />
-        <label for="fileInput" class="btn" id="uploadBtn"
-          >📁 Загрузить картинку</label
-        >
 
-        <!-- КНОПКА ОРИГИНАЛ -->
-        <button class="btn btn-original" id="originalBtn">
-          👁 Показать оригинал
-        </button>
+        <div class="top-buttons">
+          <label for="fileInput" class="btn" id="uploadBtn">📁 Загрузить</label>
+          <button class="btn btn-secondary" id="resetBtn">🔄 Сброс</button>
+          <button class="btn btn-secondary" id="downloadBtn">💾 Скачать</button>
+        </div>
 
         <div class="presets">
           <button class="preset-btn" data-preset="meme">😹 Мем</button>
@@ -43,54 +44,135 @@
         </div>
 
         <div class="control-group">
-          <label>Шакализация (Пиксели) <span id="valShakal">1</span></label>
-          <input type="range" id="shakal" min="1" max="50" value="1" />
+          <label>Шакализация (Пиксели)</label>
+          <div class="stepper" data-target="shakal">
+            <button class="step-btn" data-dir="-1">−</button>
+            <span class="step-value" id="valShakal">1</span>
+            <button class="step-btn" data-dir="1">+</button>
+          </div>
+          <input
+            type="hidden"
+            id="shakal"
+            value="1"
+            data-min="1"
+            data-max="50"
+            data-step="1"
+          />
         </div>
 
         <div class="control-group">
-          <label>Яркость <span id="valBrightness">100</span>%</label>
-          <input type="range" id="brightness" min="0" max="200" value="100" />
+          <label>Яркость</label>
+          <div class="stepper" data-target="brightness">
+            <button class="step-btn" data-dir="-1">−</button>
+            <span class="step-value" id="valBrightness">100%</span>
+            <button class="step-btn" data-dir="1">+</button>
+          </div>
+          <input
+            type="hidden"
+            id="brightness"
+            value="100"
+            data-min="0"
+            data-max="200"
+            data-step="5"
+          />
         </div>
 
         <div class="control-group">
-          <label>Контраст <span id="valContrast">100</span>%</label>
-          <input type="range" id="contrast" min="0" max="200" value="100" />
+          <label>Контраст</label>
+          <div class="stepper" data-target="contrast">
+            <button class="step-btn" data-dir="-1">−</button>
+            <span class="step-value" id="valContrast">100%</span>
+            <button class="step-btn" data-dir="1">+</button>
+          </div>
+          <input
+            type="hidden"
+            id="contrast"
+            value="100"
+            data-min="0"
+            data-max="200"
+            data-step="5"
+          />
         </div>
 
         <div class="control-group">
-          <label>Насыщенность <span id="valSaturate">100</span>%</label>
-          <input type="range" id="saturate" min="0" max="200" value="100" />
+          <label>Насыщенность</label>
+          <div class="stepper" data-target="saturate">
+            <button class="step-btn" data-dir="-1">−</button>
+            <span class="step-value" id="valSaturate">100%</span>
+            <button class="step-btn" data-dir="1">+</button>
+          </div>
+          <input
+            type="hidden"
+            id="saturate"
+            value="100"
+            data-min="0"
+            data-max="200"
+            data-step="5"
+          />
         </div>
 
-        <!-- НОВЫЙ ПОЛЗУНОК: ШУМ -->
         <div class="control-group">
-          <label>💧 Шум <span id="valNoise">0</span>%</label>
-          <input type="range" id="noise" min="0" max="100" value="0" />
+          <label>💧 Шум</label>
+          <div class="stepper" data-target="noise">
+            <button class="step-btn" data-dir="-1">−</button>
+            <span class="step-value" id="valNoise">0%</span>
+            <button class="step-btn" data-dir="1">+</button>
+          </div>
+          <input
+            type="hidden"
+            id="noise"
+            value="0"
+            data-min="0"
+            data-max="100"
+            data-step="5"
+          />
         </div>
 
-        <!-- НОВЫЙ ПОЛЗУНОК: ГЛИТЧ -->
         <div class="control-group">
-          <label>📺 Глитч <span id="valGlitch">0</span>%</label>
-          <input type="range" id="glitch" min="0" max="100" value="0" />
+          <label>📺 Глитч</label>
+          <div class="stepper" data-target="glitch">
+            <button class="step-btn" data-dir="-1">−</button>
+            <span class="step-value" id="valGlitch">0%</span>
+            <button class="step-btn" data-dir="1">+</button>
+          </div>
+          <input
+            type="hidden"
+            id="glitch"
+            value="0"
+            data-min="0"
+            data-max="100"
+            data-step="5"
+          />
         </div>
 
         <div class="control-group">
-          <label>🌈 Хроматика <span id="valChromatic">0</span>px</label>
-          <input type="range" id="chromatic" min="0" max="20" value="0" />
+          <label>🌈 Хроматика</label>
+          <div class="stepper" data-target="chromatic">
+            <button class="step-btn" data-dir="-1">−</button>
+            <span class="step-value" id="valChromatic">0px</span>
+            <button class="step-btn" data-dir="1">+</button>
+          </div>
+          <input
+            type="hidden"
+            id="chromatic"
+            value="0"
+            data-min="0"
+            data-max="20"
+            data-step="1"
+          />
         </div>
-
-        <button
-          class="btn btn-secondary"
-          id="resetBtn"
-          style="margin-bottom: 10px"
-        >
-          🔄 Сбросить настройки
-        </button>
-        <button class="btn btn-secondary" id="downloadBtn">
-          💾 Скачать результат
-        </button>
       </div>
     </main>
+
+    <!-- МОДАЛКА ПОЛНОЭКРАННОГО ПРОСМОТРА -->
+    <div
+      class="fullscreen-preview"
+      id="fullscreenPreview"
+      style="display: none"
+    >
+      <canvas id="fullscreenCanvas"></canvas>
+      <button class="fullscreen-close" id="fullscreenClose">✕</button>
+    </div>
 
     <script src="js/app.js"></script>
   </body>

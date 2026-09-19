@@ -1,7 +1,7 @@
 // ============================================
 // НАСТРОЙКИ ОТЛАДКИ
 // ============================================
-const DEBUG = true; // ← поставь false перед релизом
+const DEBUG = true;
 
 function log(message) {
   if (DEBUG) console.log("🔍 [Shakal]", message);
@@ -49,19 +49,34 @@ const placeholder = document.getElementById("placeholder");
 const fileInput = document.getElementById("fileInput");
 const downloadBtn = document.getElementById("downloadBtn");
 const resetBtn = document.getElementById("resetBtn");
-const originalBtn = document.getElementById("originalBtn");
+const canvasContainer = document.getElementById("canvasContainer");
+const canvasHint = document.getElementById("canvasHint");
+const fullscreenPreview = document.getElementById("fullscreenPreview");
+const fullscreenCanvas = document.getElementById("fullscreenCanvas");
+const fullscreenClose = document.getElementById("fullscreenClose");
 
-const shakalSlider = document.getElementById("shakal");
-const brightnessSlider = document.getElementById("brightness");
-const contrastSlider = document.getElementById("contrast");
-const saturateSlider = document.getElementById("saturate");
-const noiseSlider = document.getElementById("noise");
-const glitchSlider = document.getElementById("glitch");
-const chromaticSlider = document.getElementById("chromatic");
+const shakalInput = document.getElementById("shakal");
+const brightnessInput = document.getElementById("brightness");
+const contrastInput = document.getElementById("contrast");
+const saturateInput = document.getElementById("saturate");
+const noiseInput = document.getElementById("noise");
+const glitchInput = document.getElementById("glitch");
+const chromaticInput = document.getElementById("chromatic");
+
+const allInputs = [
+  shakalInput,
+  brightnessInput,
+  contrastInput,
+  saturateInput,
+  noiseInput,
+  glitchInput,
+  chromaticInput,
+];
 
 let originalImage = new Image();
 let isImageLoaded = false;
-let isShowingOriginal = false;
+
+const holdTimers = {};
 
 // ============================================
 // ПРЕСЕТЫ
@@ -111,18 +126,150 @@ document.querySelectorAll(".preset-btn").forEach((btn) => {
     if (!preset) return;
 
     log("Применяю пресет: " + btn.dataset.preset);
+    clearAllHoldTimers();
 
-    shakalSlider.value = preset.shakal;
-    brightnessSlider.value = preset.brightness;
-    contrastSlider.value = preset.contrast;
-    saturateSlider.value = preset.saturate;
-    noiseSlider.value = preset.noise;
-    glitchSlider.value = preset.glitch;
-    chromaticSlider.value = preset.chromatic;
+    setInputValue("shakal", preset.shakal);
+    setInputValue("brightness", preset.brightness);
+    setInputValue("contrast", preset.contrast);
+    setInputValue("saturate", preset.saturate);
+    setInputValue("noise", preset.noise);
+    setInputValue("glitch", preset.glitch);
+    setInputValue("chromatic", preset.chromatic);
 
-    updateLabels();
     applyEffects();
   });
+});
+
+// ============================================
+// STEPPERS
+// ============================================
+
+function getSuffix(inputId) {
+  if (inputId === "shakal") return "";
+  if (inputId === "chromatic") return "px";
+  return "%";
+}
+
+function setInputValue(inputId, value) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  const min = parseFloat(input.dataset.min) || 0;
+  const max = parseFloat(input.dataset.max) || 100;
+  value = Math.max(min, Math.min(max, value));
+  input.value = value;
+
+  const labelEl = document.getElementById(
+    "val" + inputId.charAt(0).toUpperCase() + inputId.slice(1),
+  );
+  if (labelEl) {
+    labelEl.innerText = value + getSuffix(inputId);
+  }
+
+  const stepper = input.parentElement.querySelector(".stepper");
+  if (stepper) {
+    const btnMinus = stepper.querySelector('[data-dir="-1"]');
+    const btnPlus = stepper.querySelector('[data-dir="1"]');
+    if (btnMinus) btnMinus.disabled = value <= min;
+    if (btnPlus) btnPlus.disabled = value >= max;
+  }
+}
+
+function clearAllHoldTimers() {
+  Object.keys(holdTimers).forEach((key) => {
+    if (holdTimers[key].hold) clearTimeout(holdTimers[key].hold);
+    if (holdTimers[key].repeat) clearInterval(holdTimers[key].repeat);
+    delete holdTimers[key];
+  });
+}
+
+document.querySelectorAll(".stepper").forEach((stepper) => {
+  const targetId = stepper.dataset.target;
+  const input = document.getElementById(targetId);
+  if (!input) return;
+
+  const btnMinus = stepper.querySelector('[data-dir="-1"]');
+  const btnPlus = stepper.querySelector('[data-dir="1"]');
+  const timerKey = "timer_" + targetId;
+
+  const changeValue = (dir) => {
+    const min = parseFloat(input.dataset.min) || 0;
+    const max = parseFloat(input.dataset.max) || 100;
+    const step = parseFloat(input.dataset.step) || 1;
+    const current = parseFloat(input.value);
+    const newValue = current + dir * step;
+
+    if (newValue < min || newValue > max) {
+      stopHold(targetId);
+      return;
+    }
+
+    setInputValue(targetId, newValue);
+    applyEffects();
+  };
+
+  const startHold = (dir) => {
+    stopHold(targetId);
+    changeValue(dir);
+
+    const min = parseFloat(input.dataset.min) || 0;
+    const max = parseFloat(input.dataset.max) || 100;
+    const current = parseFloat(input.value);
+    if (current <= min && dir === -1) return;
+    if (current >= max && dir === 1) return;
+
+    holdTimers[timerKey] = {
+      hold: setTimeout(() => {
+        holdTimers[timerKey].repeat = setInterval(() => {
+          changeValue(dir);
+        }, 80);
+      }, 500),
+      repeat: null,
+    };
+  };
+
+  const stopHold = (id) => {
+    const key = "timer_" + id;
+    if (holdTimers[key]) {
+      if (holdTimers[key].hold) clearTimeout(holdTimers[key].hold);
+      if (holdTimers[key].repeat) clearInterval(holdTimers[key].repeat);
+      delete holdTimers[key];
+    }
+  };
+
+  btnMinus.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      startHold(-1);
+    },
+    { passive: false },
+  );
+  btnMinus.addEventListener("mousedown", () => startHold(-1));
+
+  btnPlus.addEventListener(
+    "touchstart",
+    (e) => {
+      e.preventDefault();
+      startHold(1);
+    },
+    { passive: false },
+  );
+  btnPlus.addEventListener("mousedown", () => startHold(1));
+
+  [btnMinus, btnPlus].forEach((btn) => {
+    btn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      stopHold(targetId);
+    });
+    btn.addEventListener("touchcancel", () => stopHold(targetId));
+    btn.addEventListener("mouseup", () => stopHold(targetId));
+    btn.addEventListener("mouseleave", () => stopHold(targetId));
+  });
+});
+
+allInputs.forEach((input) => {
+  setInputValue(input.id, parseFloat(input.value));
 });
 
 // ============================================
@@ -146,44 +293,14 @@ originalImage.onload = () => {
   canvas.height = originalImage.height;
   canvas.style.display = "block";
   placeholder.classList.add("hidden");
+  canvasHint.style.display = "block";
   log("Картинка загружена: " + canvas.width + "×" + canvas.height);
   applyEffects();
 };
 
 // ============================================
-// ПОЛЗУНКИ
+// ВСПОМОГАТЕЛЬНЫЕ ЭФФЕКТЫ
 // ============================================
-const sliders = [
-  shakalSlider,
-  brightnessSlider,
-  contrastSlider,
-  saturateSlider,
-  noiseSlider,
-  glitchSlider,
-  chromaticSlider,
-];
-sliders.forEach((slider) => {
-  slider.addEventListener("input", () => {
-    updateLabels();
-    applyEffects();
-  });
-});
-
-function updateLabels() {
-  document.getElementById("valShakal").innerText = shakalSlider.value;
-  document.getElementById("valBrightness").innerText = brightnessSlider.value;
-  document.getElementById("valContrast").innerText = contrastSlider.value;
-  document.getElementById("valSaturate").innerText = saturateSlider.value;
-  document.getElementById("valNoise").innerText = noiseSlider.value;
-  document.getElementById("valGlitch").innerText = glitchSlider.value;
-  document.getElementById("valChromatic").innerText = chromaticSlider.value;
-}
-
-// ============================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// ============================================
-
-// Эффект шума
 function applyNoise(canvas, amount) {
   if (amount <= 0) return;
   const ctx = canvas.getContext("2d");
@@ -201,7 +318,6 @@ function applyNoise(canvas, amount) {
   ctx.putImageData(imageData, 0, 0);
 }
 
-// Эффект глитча (VHS-полосы)
 function applyGlitch(canvas, amount) {
   if (amount <= 0) return;
   const ctx = canvas.getContext("2d");
@@ -226,15 +342,14 @@ function applyGlitch(canvas, amount) {
 function applyEffects() {
   if (!isImageLoaded) return;
 
-  const shakalValue = parseInt(shakalSlider.value);
-  const brightness = brightnessSlider.value;
-  const contrast = contrastSlider.value;
-  const saturate = saturateSlider.value;
-  const noise = parseInt(noiseSlider.value);
-  const glitch = parseInt(glitchSlider.value);
-  const chromatic = parseInt(chromaticSlider.value);
+  const shakalValue = parseInt(shakalInput.value);
+  const brightness = brightnessInput.value;
+  const contrast = contrastInput.value;
+  const saturate = saturateInput.value;
+  const noise = parseInt(noiseInput.value);
+  const glitch = parseInt(glitchInput.value);
+  const chromatic = parseInt(chromaticInput.value);
 
-  // Шаг 1. Пикселизация
   const tempCanvas = document.createElement("canvas");
   const tempCtx = tempCanvas.getContext("2d");
   const scale = 1 / shakalValue;
@@ -252,7 +367,6 @@ function applyEffects() {
   pixelCtx.imageSmoothingEnabled = false;
   pixelCtx.drawImage(tempCanvas, 0, 0, w, h, 0, 0, canvas.width, canvas.height);
 
-  // Шаг 2. Цветокоррекция
   const colorCanvas = document.createElement("canvas");
   const colorCtx = colorCanvas.getContext("2d");
   colorCanvas.width = canvas.width;
@@ -261,22 +375,13 @@ function applyEffects() {
   colorCtx.drawImage(pixelCanvas, 0, 0);
   colorCtx.filter = "none";
 
-  // Шаг 3. Шум
-  if (noise > 0) {
-    applyNoise(colorCanvas, noise);
-  }
+  if (noise > 0) applyNoise(colorCanvas, noise);
+  if (glitch > 0) applyGlitch(colorCanvas, glitch);
 
-  // Шаг 4. Глитч
-  if (glitch > 0) {
-    applyGlitch(colorCanvas, glitch);
-  }
-
-  // Шаг 5. Хроматика + вывод
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (chromatic > 0) {
     ctx.drawImage(colorCanvas, 0, 0);
-
     ctx.globalCompositeOperation = "lighter";
     ctx.globalAlpha = 0.3;
 
@@ -295,71 +400,56 @@ function applyEffects() {
   } else {
     ctx.drawImage(colorCanvas, 0, 0);
   }
-
-  // Показываем оригинал если зажата кнопка
-  if (isShowingOriginal) {
-    ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
-  }
 }
+
+// ============================================
+// МОДАЛКА ПОЛНОЭКРАННОГО ПРОСМОТРА
+// ============================================
+function openFullscreen() {
+  if (!isImageLoaded) return;
+  log("Открываю полный экран");
+
+  fullscreenCanvas.width = canvas.width;
+  fullscreenCanvas.height = canvas.height;
+  const fsCtx = fullscreenCanvas.getContext("2d");
+  fsCtx.drawImage(canvas, 0, 0);
+
+  fullscreenPreview.style.display = "flex";
+}
+
+function closeFullscreen() {
+  log("Закрываю полный экран");
+  fullscreenPreview.style.display = "none";
+}
+
+canvasContainer.addEventListener("click", openFullscreen);
+fullscreenPreview.addEventListener("click", (e) => {
+  if (e.target === fullscreenPreview || e.target === fullscreenCanvas) {
+    closeFullscreen();
+  }
+});
+fullscreenClose.addEventListener("click", (e) => {
+  e.stopPropagation();
+  closeFullscreen();
+});
 
 // ============================================
 // КНОПКИ
 // ============================================
-
 resetBtn.addEventListener("click", () => {
   log("Сброс настроек");
-  shakalSlider.value = 1;
-  brightnessSlider.value = 100;
-  contrastSlider.value = 100;
-  saturateSlider.value = 100;
-  noiseSlider.value = 0;
-  glitchSlider.value = 0;
-  chromaticSlider.value = 0;
-  updateLabels();
+  clearAllHoldTimers();
+
+  setInputValue("shakal", 1);
+  setInputValue("brightness", 100);
+  setInputValue("contrast", 100);
+  setInputValue("saturate", 100);
+  setInputValue("noise", 0);
+  setInputValue("glitch", 0);
+  setInputValue("chromatic", 0);
   applyEffects();
 });
 
-// Кнопка "Оригинал" — зажал, видишь исходник
-originalBtn.addEventListener("mousedown", () => {
-  if (!isImageLoaded) return;
-  isShowingOriginal = true;
-  log("Показываю оригинал");
-  applyEffects();
-});
-
-originalBtn.addEventListener("mouseup", () => {
-  if (!isImageLoaded) return;
-  isShowingOriginal = false;
-  log("Возвращаю эффект");
-  applyEffects();
-});
-
-originalBtn.addEventListener("mouseleave", () => {
-  if (!isImageLoaded) return;
-  if (isShowingOriginal) {
-    isShowingOriginal = false;
-    applyEffects();
-  }
-});
-
-// Для тач-устройств
-originalBtn.addEventListener("touchstart", (e) => {
-  e.preventDefault();
-  if (!isImageLoaded) return;
-  isShowingOriginal = true;
-  log("Показываю оригинал (touch)");
-  applyEffects();
-});
-
-originalBtn.addEventListener("touchend", (e) => {
-  e.preventDefault();
-  if (!isImageLoaded) return;
-  isShowingOriginal = false;
-  log("Возвращаю эффект (touch)");
-  applyEffects();
-});
-
-// Скачивание
 downloadBtn.addEventListener("click", async () => {
   if (!isImageLoaded) {
     safeAlert("Сначала загрузите картинку!");
@@ -369,7 +459,6 @@ downloadBtn.addEventListener("click", async () => {
   log("Начинаю сохранение...");
   const imageDataUrl = canvas.toDataURL("image/png");
 
-  // Telegram
   if (
     isRealTelegram &&
     tg.isVersionAtLeast &&
@@ -385,7 +474,6 @@ downloadBtn.addEventListener("click", async () => {
     }
   }
 
-  // Capacitor (APK)
   if (
     window.Capacitor &&
     window.Capacitor.Plugins &&
@@ -410,7 +498,6 @@ downloadBtn.addEventListener("click", async () => {
         log("Сохранено в альбом Shakal");
         safeAlert("✅ Картинка сохранена в Галерею!");
       } else {
-        log("Альбом Shakal не найден");
         safeAlert("❌ Не удалось найти альбом Shakal");
       }
       return;
@@ -421,8 +508,6 @@ downloadBtn.addEventListener("click", async () => {
     }
   }
 
-  // Браузер
-  log("Fallback: обычное скачивание");
   const link = document.createElement("a");
   link.download = "shakal_art.png";
   link.href = imageDataUrl;
