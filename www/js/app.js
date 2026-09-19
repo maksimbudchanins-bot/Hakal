@@ -274,7 +274,6 @@ function clearAllHoldTimers() {
   });
 }
 
-// Снять фокус с активного элемента (чтобы клавиатура не вылезала)
 function blurActiveInput() {
   if (
     document.activeElement &&
@@ -307,7 +306,7 @@ document.querySelectorAll(".stepper").forEach((stepper) => {
   };
 
   const startHold = (dir) => {
-    blurActiveInput(); // ← Убираем фокус с поля ввода
+    blurActiveInput();
     stopHold(targetId);
     changeValue(dir);
     const min = parseFloat(input.dataset.min) || 0;
@@ -388,6 +387,7 @@ originalImage.onload = () => {
   overlayCanvas.height = originalImage.height;
   log("Картинка загружена: " + canvas.width + "×" + canvas.height);
   applyEffects();
+  updateCanvasHint();
 };
 
 // ============================================
@@ -561,6 +561,21 @@ function redrawAllTexts() {
   }
   if (deleteAllTextsBtn) {
     deleteAllTextsBtn.style.display = texts.length > 0 ? "block" : "none";
+  }
+
+  updateCanvasHint();
+}
+
+// ============================================
+// ДИНАМИЧЕСКАЯ ПОДСКАЗКА НА CANVAS
+// ============================================
+function updateCanvasHint() {
+  if (!isImageLoaded) return;
+
+  if (texts.length === 0) {
+    canvasHint.innerText = "👆 Фото → экран";
+  } else {
+    canvasHint.innerText = "👆 Текст → редактор · Фото → экран";
   }
 }
 
@@ -923,7 +938,7 @@ document.querySelectorAll(".mini-step-btn").forEach((btn) => {
   const timerKey = "mini_" + btn.dataset.textProp + "_" + btn.dataset.dir;
 
   const startHold = () => {
-    blurActiveInput(); // ← Убираем фокус с поля ввода
+    blurActiveInput();
     stopMiniHold(timerKey);
     changeTextProp(btn);
     miniHoldTimers[timerKey] = {
@@ -1108,9 +1123,6 @@ function closeFullscreen() {
   fullscreenPreview.style.display = "none";
 }
 
-// ============================================
-// ТАП ПО CANVAS
-// ============================================
 canvasContainer.addEventListener("click", (e) => {
   if (isTextEditing) return;
   if (!isImageLoaded) return;

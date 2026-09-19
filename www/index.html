@@ -23,9 +23,7 @@
         </div>
         <canvas id="imageCanvas"></canvas>
         <canvas id="overlayCanvas" class="overlay-canvas"></canvas>
-        <div class="canvas-hint" id="canvasHint" style="display: none">
-          👆 Тап по тексту — редактировать
-        </div>
+        <div class="canvas-hint" id="canvasHint" style="display: none"></div>
 
         <div class="coach-tooltip" id="coachTooltip" style="display: none">
           ✌️ Двумя пальцами — крутить и масштабировать
@@ -36,15 +34,11 @@
         <input type="file" id="fileInput" accept="image/*" />
 
         <div class="top-buttons">
-          <label for="fileInput" class="btn" id="uploadBtn"
-            >📁<br />Загрузить</label
-          >
+          <label for="fileInput" class="btn" id="uploadBtn">📁 Загрузить</label>
           <button class="btn btn-secondary" id="resetEffectsBtn">
-            🎨<br />Сброс эффектов
+            🎨 Сброс
           </button>
-          <button class="btn btn-secondary" id="downloadBtn">
-            💾<br />Скачать
-          </button>
+          <button class="btn btn-secondary" id="downloadBtn">💾 Скачать</button>
         </div>
 
         <div class="presets">
@@ -54,141 +48,145 @@
           <button class="preset-btn" data-preset="glitch">👾 Глитч</button>
         </div>
 
-        <button class="btn btn-text-tool" id="addTextBtn">
-          💬 Добавить текст
-        </button>
-        <button
-          class="btn btn-text-tool"
-          id="editLastTextBtn"
-          style="display: none"
-        >
-          ✏️ Редактировать текст
-        </button>
-        <button
-          class="btn btn-danger-full"
-          id="deleteAllTextsBtn"
-          style="display: none"
-        >
-          🗑 Удалить тексты
-        </button>
-
-        <div class="control-group">
-          <label>Шакализация (Пиксели)</label>
-          <div class="stepper" data-target="shakal">
-            <button class="step-btn" data-dir="-1">−</button>
-            <span class="step-value" id="valShakal">1</span>
-            <button class="step-btn" data-dir="1">+</button>
-          </div>
-          <input
-            type="hidden"
-            id="shakal"
-            value="1"
-            data-min="1"
-            data-max="50"
-            data-step="1"
-          />
+        <div class="text-buttons">
+          <button class="btn btn-text-tool btn-compact" id="addTextBtn">
+            💬 +Текст
+          </button>
+          <button
+            class="btn btn-text-tool btn-compact"
+            id="editLastTextBtn"
+            style="display: none"
+          >
+            ✏️ Редакт
+          </button>
+          <button
+            class="btn btn-danger-full btn-compact"
+            id="deleteAllTextsBtn"
+            style="display: none"
+          >
+            🗑 Тексты
+          </button>
         </div>
 
-        <div class="control-group">
-          <label>Яркость</label>
-          <div class="stepper" data-target="brightness">
-            <button class="step-btn" data-dir="-1">−</button>
-            <span class="step-value" id="valBrightness">100%</span>
-            <button class="step-btn" data-dir="1">+</button>
+        <div class="steppers-grid">
+          <div class="control-group">
+            <label>Шакал</label>
+            <div class="stepper" data-target="shakal">
+              <button class="step-btn" data-dir="-1">−</button>
+              <span class="step-value" id="valShakal">1</span>
+              <button class="step-btn" data-dir="1">+</button>
+            </div>
+            <input
+              type="hidden"
+              id="shakal"
+              value="1"
+              data-min="1"
+              data-max="50"
+              data-step="1"
+            />
           </div>
-          <input
-            type="hidden"
-            id="brightness"
-            value="100"
-            data-min="0"
-            data-max="200"
-            data-step="5"
-          />
-        </div>
 
-        <div class="control-group">
-          <label>Контраст</label>
-          <div class="stepper" data-target="contrast">
-            <button class="step-btn" data-dir="-1">−</button>
-            <span class="step-value" id="valContrast">100%</span>
-            <button class="step-btn" data-dir="1">+</button>
+          <div class="control-group">
+            <label>Яркость</label>
+            <div class="stepper" data-target="brightness">
+              <button class="step-btn" data-dir="-1">−</button>
+              <span class="step-value" id="valBrightness">100%</span>
+              <button class="step-btn" data-dir="1">+</button>
+            </div>
+            <input
+              type="hidden"
+              id="brightness"
+              value="100"
+              data-min="0"
+              data-max="200"
+              data-step="5"
+            />
           </div>
-          <input
-            type="hidden"
-            id="contrast"
-            value="100"
-            data-min="0"
-            data-max="200"
-            data-step="5"
-          />
-        </div>
 
-        <div class="control-group">
-          <label>Насыщенность</label>
-          <div class="stepper" data-target="saturate">
-            <button class="step-btn" data-dir="-1">−</button>
-            <span class="step-value" id="valSaturate">100%</span>
-            <button class="step-btn" data-dir="1">+</button>
+          <div class="control-group">
+            <label>Контраст</label>
+            <div class="stepper" data-target="contrast">
+              <button class="step-btn" data-dir="-1">−</button>
+              <span class="step-value" id="valContrast">100%</span>
+              <button class="step-btn" data-dir="1">+</button>
+            </div>
+            <input
+              type="hidden"
+              id="contrast"
+              value="100"
+              data-min="0"
+              data-max="200"
+              data-step="5"
+            />
           </div>
-          <input
-            type="hidden"
-            id="saturate"
-            value="100"
-            data-min="0"
-            data-max="200"
-            data-step="5"
-          />
-        </div>
 
-        <div class="control-group">
-          <label>💧 Шум</label>
-          <div class="stepper" data-target="noise">
-            <button class="step-btn" data-dir="-1">−</button>
-            <span class="step-value" id="valNoise">0%</span>
-            <button class="step-btn" data-dir="1">+</button>
+          <div class="control-group">
+            <label>Насыщен.</label>
+            <div class="stepper" data-target="saturate">
+              <button class="step-btn" data-dir="-1">−</button>
+              <span class="step-value" id="valSaturate">100%</span>
+              <button class="step-btn" data-dir="1">+</button>
+            </div>
+            <input
+              type="hidden"
+              id="saturate"
+              value="100"
+              data-min="0"
+              data-max="200"
+              data-step="5"
+            />
           </div>
-          <input
-            type="hidden"
-            id="noise"
-            value="0"
-            data-min="0"
-            data-max="100"
-            data-step="5"
-          />
-        </div>
 
-        <div class="control-group">
-          <label>📺 Глитч</label>
-          <div class="stepper" data-target="glitch">
-            <button class="step-btn" data-dir="-1">−</button>
-            <span class="step-value" id="valGlitch">0%</span>
-            <button class="step-btn" data-dir="1">+</button>
+          <div class="control-group">
+            <label>💧 Шум</label>
+            <div class="stepper" data-target="noise">
+              <button class="step-btn" data-dir="-1">−</button>
+              <span class="step-value" id="valNoise">0%</span>
+              <button class="step-btn" data-dir="1">+</button>
+            </div>
+            <input
+              type="hidden"
+              id="noise"
+              value="0"
+              data-min="0"
+              data-max="100"
+              data-step="5"
+            />
           </div>
-          <input
-            type="hidden"
-            id="glitch"
-            value="0"
-            data-min="0"
-            data-max="100"
-            data-step="5"
-          />
-        </div>
 
-        <div class="control-group">
-          <label>🌈 Хроматика</label>
-          <div class="stepper" data-target="chromatic">
-            <button class="step-btn" data-dir="-1">−</button>
-            <span class="step-value" id="valChromatic">0px</span>
-            <button class="step-btn" data-dir="1">+</button>
+          <div class="control-group">
+            <label>📺 Глитч</label>
+            <div class="stepper" data-target="glitch">
+              <button class="step-btn" data-dir="-1">−</button>
+              <span class="step-value" id="valGlitch">0%</span>
+              <button class="step-btn" data-dir="1">+</button>
+            </div>
+            <input
+              type="hidden"
+              id="glitch"
+              value="0"
+              data-min="0"
+              data-max="100"
+              data-step="5"
+            />
           </div>
-          <input
-            type="hidden"
-            id="chromatic"
-            value="0"
-            data-min="0"
-            data-max="20"
-            data-step="1"
-          />
+
+          <div class="control-group">
+            <label>🌈 Хром.</label>
+            <div class="stepper" data-target="chromatic">
+              <button class="step-btn" data-dir="-1">−</button>
+              <span class="step-value" id="valChromatic">0px</span>
+              <button class="step-btn" data-dir="1">+</button>
+            </div>
+            <input
+              type="hidden"
+              id="chromatic"
+              value="0"
+              data-min="0"
+              data-max="20"
+              data-step="1"
+            />
+          </div>
         </div>
       </div>
     </main>
@@ -464,9 +462,7 @@
           <button class="custom-confirm-btn cancel" id="customConfirmCancel">
             Отмена
           </button>
-          <button class="custom-confirm-btn confirm" id="customConfirmOk">
-            ОК
-          </button>
+          <button class="custom-confirm-btn ok" id="customConfirmOk">ОК</button>
         </div>
       </div>
     </div>

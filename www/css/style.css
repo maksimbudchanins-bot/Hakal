@@ -12,10 +12,27 @@
   --success: #28a745;
   --warning: #ffc107;
   --info: #4a9eff;
+
+  /* Адаптивные размеры */
+  --canvas-height: clamp(120px, 20vh, 260px);
+  --btn-font: clamp(10px, 2.8vw, 13px);
+  --label-font: clamp(9px, 2.4vw, 11px);
+  --step-btn-size: clamp(26px, 7vw, 36px);
+  --step-value-font: clamp(10px, 2.6vw, 13px);
+  --control-padding: clamp(6px, 2vw, 12px);
+  --gap: clamp(4px, 1.5vw, 8px);
 }
 
 * {
   box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 body {
@@ -24,48 +41,60 @@ body {
     sans-serif;
   background-color: var(--bg);
   color: var(--text);
-  margin: 0;
-  padding: 15px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 100vh;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh; /* Динамическая высота для мобильных */
+  padding: clamp(4px, 1.5vw, 12px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+header {
+  flex-shrink: 0;
+  width: 100%;
+  text-align: center;
 }
 
 header h2 {
-  margin-top: 0;
-  font-size: 18px;
-  text-align: center;
+  margin: 0 0 clamp(4px, 1vh, 10px) 0;
+  font-size: clamp(13px, 3.8vw, 18px);
   color: var(--accent);
 }
 
 main {
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  flex: 1;
+  min-height: 0;
 }
 
 /* ============================================
-   STICKY CANVAS
+   CANVAS — адаптивный
    ============================================ */
 .canvas-container {
-  position: sticky;
-  top: 0;
+  position: relative;
   width: 100%;
   background: #000;
-  border-radius: 16px;
+  border-radius: clamp(8px, 2vw, 16px);
   overflow: hidden;
-  margin-bottom: 15px;
+  margin-bottom: clamp(6px, 1.5vh, 12px);
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 200px;
-  max-height: 35vh;
+  min-height: 100px;
+  max-height: var(--canvas-height);
+  height: var(--canvas-height);
   border: 2px dashed var(--border);
   z-index: 10;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .canvas-container:active {
@@ -74,17 +103,21 @@ main {
 
 canvas#imageCanvas {
   max-width: 100%;
-  max-height: 35vh;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
   display: none;
   pointer-events: none;
 }
 
 .overlay-canvas {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 100%;
+  max-height: 100%;
   pointer-events: none;
 }
 
@@ -100,14 +133,17 @@ body.text-editing {
 
 .canvas-hint {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
+  bottom: clamp(4px, 1vh, 8px);
+  right: clamp(4px, 1vh, 8px);
   background: rgba(0, 0, 0, 0.6);
   color: #ffffff;
-  padding: 4px 10px;
-  border-radius: 10px;
-  font-size: 11px;
+  padding: clamp(2px, 0.6vh, 4px) clamp(6px, 1.5vw, 10px);
+  border-radius: 8px;
+  font-size: clamp(9px, 2.2vw, 11px);
   pointer-events: none;
+  max-width: 90%;
+  text-align: right;
+  line-height: 1.2;
 }
 
 .coach-tooltip {
@@ -117,9 +153,9 @@ body.text-editing {
   transform: translate(-50%, -50%);
   background: rgba(255, 140, 66, 0.95);
   color: #ffffff;
-  padding: 10px 16px;
+  padding: clamp(6px, 1.5vh, 10px) clamp(10px, 3vw, 16px);
   border-radius: 12px;
-  font-size: 13px;
+  font-size: clamp(10px, 2.6vw, 13px);
   font-weight: 600;
   white-space: nowrap;
   pointer-events: none;
@@ -140,37 +176,49 @@ body.text-editing {
 .controls {
   width: 100%;
   background: var(--bg-card);
-  padding: 15px;
-  border-radius: 16px;
+  padding: var(--control-padding);
+  border-radius: clamp(8px, 2vw, 16px);
 }
 
-.control-group {
-  margin-bottom: 12px;
+/* ============================================
+   ВЕРХНИЕ КНОПКИ
+   ============================================ */
+.top-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--gap);
+  margin-bottom: clamp(4px, 1vh, 8px);
 }
 
-.control-group label {
-  display: block;
-  font-size: 14px;
-  margin-bottom: 6px;
-  color: var(--text-dim);
+.top-buttons .btn {
+  margin-bottom: 0;
+  padding: clamp(6px, 1.5vh, 10px) clamp(3px, 1vw, 6px);
+  font-size: var(--btn-font);
+  border-radius: clamp(6px, 1.5vw, 10px);
+  min-height: clamp(34px, 5vh, 48px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.2;
 }
 
-input[type="file"] {
-  display: none;
-}
-
+/* ============================================
+   ОБЩИЕ КНОПКИ
+   ============================================ */
 .btn {
   display: block;
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: #ffffff;
   border: none;
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-size: 16px;
+  padding: clamp(8px, 1.5vh, 12px) clamp(10px, 2.5vw, 16px);
+  border-radius: clamp(8px, 2vw, 12px);
+  font-size: var(--btn-font);
   font-weight: bold;
   width: 100%;
   cursor: pointer;
-  margin-bottom: 10px;
+  margin-bottom: clamp(4px, 1vh, 8px);
   text-align: center;
   font-family: inherit;
   -webkit-tap-highlight-color: transparent;
@@ -195,52 +243,110 @@ input[type="file"] {
   background: linear-gradient(135deg, #4a9eff, #2d7dd2);
 }
 
+.btn-compact {
+  padding: clamp(6px, 1.2vh, 8px) clamp(4px, 1.5vw, 8px) !important;
+  font-size: var(--btn-font) !important;
+  min-height: clamp(34px, 5vh, 44px);
+}
+
 /* ============================================
-   ВЕРХНИЕ КНОПКИ (3 в ряд, адаптивные)
+   КНОПКИ ТЕКСТА (в ряд)
    ============================================ */
-.top-buttons {
+.text-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 15px;
+  gap: var(--gap);
+  margin-bottom: clamp(4px, 1vh, 10px);
 }
 
-.top-buttons .btn {
+.text-buttons .btn {
   margin-bottom: 0;
-  padding: 10px 4px;
-  font-size: 11px;
-  border-radius: 10px;
-  line-height: 1.3;
-  word-break: break-word;
-  min-height: 60px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
 }
 
 /* ============================================
-   STEPPERS
+   ПРЕСЕТЫ (4 в ряд)
    ============================================ */
+.presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: var(--gap);
+  margin-bottom: clamp(4px, 1vh, 10px);
+}
+
+.preset-btn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: clamp(6px, 1.2vh, 10px) clamp(3px, 1vw, 6px);
+  border-radius: clamp(6px, 1.5vw, 10px);
+  font-size: clamp(9px, 2.4vw, 12px);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: clamp(32px, 4.5vh, 42px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preset-btn:active {
+  transform: scale(0.96);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ============================================
+   СТЕППЕРЫ В 2 КОЛОНКИ — адаптивные
+   ============================================ */
+.steppers-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+}
+
+.steppers-grid .control-group {
+  margin-bottom: 0;
+}
+
+.control-group label {
+  display: block;
+  font-size: var(--label-font);
+  margin-bottom: clamp(2px, 0.5vh, 4px);
+  color: var(--text-dim);
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .stepper {
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 4px;
-  gap: 8px;
+  border-radius: clamp(6px, 1.5vw, 10px);
+  padding: clamp(1px, 0.4vw, 3px);
+  gap: clamp(1px, 0.4vw, 3px);
+  min-height: clamp(32px, 5vh, 42px);
 }
 
 .step-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
+  width: var(--step-btn-size);
+  height: var(--step-btn-size);
+  min-width: var(--step-btn-size);
+  min-height: var(--step-btn-size);
+  border-radius: clamp(4px, 1.2vw, 8px);
   border: none;
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: #ffffff;
-  font-size: 24px;
+  font-size: clamp(14px, 4vw, 20px);
   font-weight: bold;
   cursor: pointer;
   display: flex;
@@ -253,6 +359,7 @@ input[type="file"] {
     opacity 0.1s ease;
   user-select: none;
   -webkit-user-select: none;
+  flex-shrink: 0;
 }
 
 .step-btn:active {
@@ -269,65 +376,63 @@ input[type="file"] {
 .step-value {
   flex: 1;
   text-align: center;
-  font-size: 18px;
+  font-size: var(--step-value-font);
   font-weight: bold;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
   user-select: none;
   -webkit-user-select: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  padding: 0 clamp(1px, 0.5vw, 4px);
 }
 
+/* ============================================
+   ПЛЕЙСХОЛДЕР
+   ============================================ */
 .placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 200px;
-  padding: 20px;
+  min-height: 100px;
+  padding: 10px;
   color: #5a5a5a;
   text-align: center;
 }
 
 .placeholder-icon {
-  font-size: 48px;
-  margin-bottom: 8px;
+  font-size: clamp(28px, 7vw, 42px);
+  margin-bottom: clamp(2px, 0.8vh, 8px);
   opacity: 0.6;
 }
 
 .placeholder-text {
-  font-size: 14px;
+  font-size: clamp(10px, 2.8vw, 13px);
 }
 
 .placeholder.hidden {
   display: none;
 }
 
-.presets {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 12px;
+input[type="file"] {
+  display: none;
 }
 
-.preset-btn {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: inherit;
-  -webkit-tap-highlight-color: transparent;
+/* ============================================
+   КНОПКА УДАЛЕНИЯ ВСЕХ ТЕКСТОВ
+   ============================================ */
+.btn-danger-full {
+  background: transparent;
+  border: 2px solid var(--danger);
+  color: var(--danger);
 }
 
-.preset-btn:active {
-  transform: scale(0.96);
-  background: var(--accent-soft);
-  color: var(--accent);
+.btn-danger-full:active {
+  background: rgba(255, 59, 59, 0.15);
+  transform: scale(0.98);
 }
 
 /* ============================================
@@ -366,15 +471,15 @@ input[type="file"] {
 
 .fullscreen-close {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 48px;
-  height: 48px;
+  top: clamp(10px, 3vh, 20px);
+  right: clamp(10px, 3vw, 20px);
+  width: clamp(40px, 10vw, 48px);
+  height: clamp(40px, 10vw, 48px);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 255, 255, 0.4);
   color: #ffffff;
-  font-size: 24px;
+  font-size: clamp(20px, 5vw, 24px);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -397,13 +502,14 @@ input[type="file"] {
   left: 0;
   right: 0;
   background: var(--bg-card);
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
-  padding: 8px 16px 20px;
+  border-top-left-radius: clamp(14px, 4vw, 20px);
+  border-top-right-radius: clamp(14px, 4vw, 20px);
+  padding: clamp(6px, 1.5vh, 10px) clamp(10px, 3vw, 16px)
+    clamp(12px, 2.5vh, 20px);
   z-index: 500;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
   animation: slideUp 0.3s ease;
-  max-height: 65vh;
+  max-height: 70vh;
   overflow-y: auto;
 }
 
@@ -421,18 +527,19 @@ input[type="file"] {
   height: 4px;
   background: #555;
   border-radius: 2px;
-  margin: 0 auto 12px;
+  margin: 0 auto clamp(8px, 1.5vh, 12px);
 }
 
 .text-editor-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: clamp(6px, 1.2vh, 10px);
+  gap: clamp(4px, 1.5vw, 8px);
 }
 
 .text-editor-title {
-  font-size: 15px;
+  font-size: clamp(13px, 3.5vw, 15px);
   font-weight: bold;
   color: var(--accent);
 }
@@ -441,13 +548,14 @@ input[type="file"] {
   background: var(--bg-elevated);
   border: 1px solid var(--accent);
   color: var(--accent);
-  padding: 6px 12px;
+  padding: clamp(4px, 1vh, 6px) clamp(8px, 2.5vw, 12px);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: clamp(10px, 2.6vw, 12px);
   font-weight: bold;
   cursor: pointer;
   font-family: inherit;
   -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
 }
 
 .text-editor-add:active {
@@ -457,21 +565,22 @@ input[type="file"] {
 .text-editor-tabs {
   display: flex;
   gap: 4px;
-  margin-bottom: 12px;
+  margin-bottom: clamp(8px, 1.5vh, 12px);
   background: var(--bg);
   border-radius: 10px;
   padding: 4px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .text-tab {
   flex: 1;
-  min-width: 60px;
+  min-width: clamp(50px, 15vw, 70px);
   background: transparent;
   border: none;
   color: var(--text-dim);
-  padding: 8px 4px;
-  font-size: 12px;
+  padding: clamp(6px, 1.2vh, 8px) clamp(3px, 1vw, 6px);
+  font-size: clamp(10px, 2.6vw, 12px);
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
@@ -488,23 +597,22 @@ input[type="file"] {
 .text-tab-content {
   display: none;
 }
-
 .text-tab-content.active {
   display: block;
 }
 
 .text-input-row {
-  margin-bottom: 12px;
+  margin-bottom: clamp(8px, 1.5vh, 12px);
 }
 
 .text-input-row input {
   width: 100%;
-  padding: 12px;
+  padding: clamp(8px, 1.8vh, 12px);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: clamp(8px, 2vw, 10px);
   color: var(--text);
-  font-size: 15px;
+  font-size: clamp(13px, 3.5vw, 15px);
   font-family: inherit;
 }
 
@@ -516,17 +624,17 @@ input[type="file"] {
 .font-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: clamp(4px, 1.5vw, 8px);
+  margin-bottom: clamp(8px, 1.5vh, 12px);
 }
 
 .font-btn {
-  padding: 10px;
+  padding: clamp(6px, 1.5vh, 10px);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   color: var(--text);
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: clamp(8px, 2vw, 10px);
+  font-size: clamp(11px, 3vw, 14px);
   cursor: pointer;
   font-family: inherit;
 }
@@ -541,9 +649,10 @@ input[type="file"] {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: clamp(6px, 1.2vh, 12px);
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: clamp(12px, 3.2vw, 14px);
+  gap: clamp(6px, 2vw, 10px);
 }
 
 .mini-stepper {
@@ -551,19 +660,20 @@ input[type="file"] {
   align-items: center;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: clamp(8px, 2vw, 10px);
   padding: 2px;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .mini-step-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: clamp(30px, 8vw, 40px);
+  height: clamp(30px, 8vw, 40px);
+  border-radius: clamp(6px, 1.5vw, 8px);
   border: none;
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: #ffffff;
-  font-size: 18px;
+  font-size: clamp(14px, 4vw, 18px);
   font-weight: bold;
   cursor: pointer;
   font-family: inherit;
@@ -577,23 +687,23 @@ input[type="file"] {
 }
 
 .mini-stepper span {
-  min-width: 50px;
+  min-width: clamp(35px, 10vw, 50px);
   text-align: center;
   color: var(--accent);
   font-weight: bold;
-  font-size: 15px;
+  font-size: clamp(12px, 3.5vw, 15px);
 }
 
 .color-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: clamp(6px, 2vw, 10px);
+  margin-bottom: clamp(8px, 1.5vh, 12px);
 }
 
 .color-swatch {
-  width: 44px;
-  height: 44px;
+  width: clamp(36px, 10vw, 48px);
+  height: clamp(36px, 10vw, 48px);
   border-radius: 50%;
   border: 3px solid transparent;
   cursor: pointer;
@@ -601,12 +711,12 @@ input[type="file"] {
     transform 0.1s ease,
     border-color 0.1s ease;
   padding: 0;
+  flex-shrink: 0;
 }
 
 .color-swatch:active {
   transform: scale(0.9);
 }
-
 .color-swatch.active {
   border-color: var(--accent);
   transform: scale(1.1);
@@ -614,16 +724,16 @@ input[type="file"] {
 
 .btn-mini {
   width: 100%;
-  padding: 12px;
+  padding: clamp(8px, 1.8vh, 12px);
   background: linear-gradient(135deg, #4a9eff, #2d7dd2);
   border: none;
   color: #ffffff;
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: clamp(8px, 2vw, 10px);
+  font-size: clamp(12px, 3.2vw, 14px);
   font-weight: bold;
   cursor: pointer;
   font-family: inherit;
-  margin-bottom: 8px;
+  margin-bottom: clamp(6px, 1.2vh, 8px);
 }
 
 .btn-mini:active {
@@ -631,15 +741,16 @@ input[type="file"] {
 }
 
 .toggle-btn {
-  padding: 8px 20px;
+  padding: clamp(5px, 1.2vh, 8px) clamp(12px, 3.5vw, 20px);
   background: var(--bg-elevated);
   border: 2px solid var(--border);
   color: var(--text-dim);
   border-radius: 8px;
-  font-size: 14px;
+  font-size: clamp(11px, 3vw, 14px);
   font-weight: bold;
   cursor: pointer;
   font-family: inherit;
+  white-space: nowrap;
 }
 
 .toggle-btn.active {
@@ -649,41 +760,41 @@ input[type="file"] {
 }
 
 .hint-text {
-  font-size: 12px;
+  font-size: clamp(10px, 2.6vw, 12px);
   color: var(--text-dim);
   text-align: center;
-  padding: 8px;
+  padding: clamp(6px, 1.2vh, 8px);
   background: var(--bg);
   border-radius: 8px;
-  margin-top: 8px;
+  margin-top: clamp(4px, 1vh, 8px);
 }
 
 .text-editor-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 16px;
+  gap: clamp(6px, 2vw, 10px);
+  margin-top: clamp(10px, 2vh, 16px);
 }
 
 .btn-danger {
-  padding: 14px;
+  padding: clamp(10px, 2vh, 14px);
   background: var(--danger);
   border: none;
   color: #ffffff;
-  border-radius: 12px;
-  font-size: 15px;
+  border-radius: clamp(8px, 2vw, 12px);
+  font-size: clamp(12px, 3.2vw, 15px);
   font-weight: bold;
   cursor: pointer;
   font-family: inherit;
 }
 
 .btn-primary {
-  padding: 14px;
+  padding: clamp(10px, 2vh, 14px);
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   border: none;
   color: #ffffff;
-  border-radius: 12px;
-  font-size: 15px;
+  border-radius: clamp(8px, 2vw, 12px);
+  font-size: clamp(12px, 3.2vw, 15px);
   font-weight: bold;
   cursor: pointer;
   font-family: inherit;
@@ -692,21 +803,6 @@ input[type="file"] {
 .btn-danger:active,
 .btn-primary:active {
   transform: scale(0.97);
-}
-
-/* ============================================
-   КНОПКА УДАЛЕНИЯ ВСЕХ ТЕКСТОВ
-   ============================================ */
-.btn-danger-full {
-  background: transparent;
-  border: 2px solid var(--danger);
-  color: var(--danger);
-  margin-bottom: 15px;
-}
-
-.btn-danger-full:active {
-  background: rgba(255, 59, 59, 0.15);
-  transform: scale(0.98);
 }
 
 /* ============================================
@@ -731,10 +827,10 @@ input[type="file"] {
 .custom-alert,
 .custom-confirm {
   background: var(--bg-card);
-  border-radius: 20px;
-  padding: 24px 20px;
+  border-radius: clamp(14px, 4vw, 20px);
+  padding: clamp(18px, 3vh, 24px) clamp(14px, 3.5vw, 20px);
   width: 100%;
-  max-width: 320px;
+  max-width: min(320px, 90vw);
   text-align: center;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
   animation: popIn 0.25s ease;
@@ -753,28 +849,28 @@ input[type="file"] {
 
 .custom-alert-icon,
 .custom-confirm-icon {
-  font-size: 56px;
-  margin-bottom: 12px;
+  font-size: clamp(40px, 10vw, 56px);
+  margin-bottom: clamp(8px, 1.5vh, 12px);
   line-height: 1;
 }
 
 .custom-alert-message,
 .custom-confirm-message {
-  font-size: 16px;
+  font-size: clamp(14px, 3.8vw, 16px);
   color: var(--text);
-  margin-bottom: 20px;
+  margin-bottom: clamp(14px, 2.5vh, 20px);
   line-height: 1.4;
   word-wrap: break-word;
 }
 
 .custom-alert-btn {
   width: 100%;
-  padding: 14px;
+  padding: clamp(10px, 2vh, 14px);
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   border: none;
   color: #ffffff;
-  border-radius: 12px;
-  font-size: 16px;
+  border-radius: clamp(8px, 2vw, 12px);
+  font-size: clamp(14px, 3.8vw, 16px);
   font-weight: bold;
   cursor: pointer;
   font-family: inherit;
@@ -788,14 +884,14 @@ input[type="file"] {
 .custom-confirm-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: clamp(6px, 2vw, 10px);
 }
 
 .custom-confirm-btn {
-  padding: 14px;
+  padding: clamp(10px, 2vh, 14px);
   border: none;
-  border-radius: 12px;
-  font-size: 15px;
+  border-radius: clamp(8px, 2vw, 12px);
+  font-size: clamp(12px, 3.4vw, 15px);
   font-weight: bold;
   cursor: pointer;
   font-family: inherit;
@@ -812,6 +908,7 @@ input[type="file"] {
   border: 1px solid var(--border);
 }
 
+.custom-confirm-btn.ok,
 .custom-confirm-btn.confirm {
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: #ffffff;
@@ -826,14 +923,14 @@ input[type="file"] {
    ============================================ */
 .toast {
   position: fixed;
-  bottom: 30px;
+  bottom: clamp(15px, 4vh, 30px);
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.9);
   color: #ffffff;
-  padding: 12px 24px;
+  padding: clamp(8px, 1.8vh, 12px) clamp(16px, 4vw, 24px);
   border-radius: 24px;
-  font-size: 14px;
+  font-size: clamp(12px, 3.2vw, 14px);
   font-weight: 600;
   z-index: 2500;
   pointer-events: none;
@@ -851,5 +948,65 @@ input[type="file"] {
   to {
     transform: translate(-50%, 0);
     opacity: 1;
+  }
+}
+
+/* ============================================
+   МЕДИАЗАПРОСЫ
+   ============================================ */
+
+/* Очень маленькие экраны (старые Android) */
+@media (max-height: 600px) {
+  :root {
+    --canvas-height: clamp(100px, 18vh, 160px);
+    --step-btn-size: clamp(24px, 6.5vw, 32px);
+  }
+  header h2 {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .control-group label {
+    font-size: 9px;
+  }
+}
+
+/* Большие экраны (планшеты, флагманы) */
+@media (min-height: 800px) {
+  :root {
+    --canvas-height: clamp(180px, 25vh, 320px);
+  }
+  main {
+    max-width: 520px;
+  }
+}
+
+/* Ландшафт на телефоне */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --canvas-height: clamp(80px, 40vh, 140px);
+    --step-btn-size: clamp(24px, 5vh, 32px);
+  }
+  header {
+    display: none;
+  }
+  body {
+    padding: 4px;
+  }
+  .steppers-grid {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+  .presets {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+}
+
+/* Очень узкие экраны */
+@media (max-width: 340px) {
+  :root {
+    --btn-font: 9px;
+    --label-font: 8px;
+  }
+  .preset-btn {
+    font-size: 8px;
   }
 }
