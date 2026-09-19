@@ -9,6 +9,9 @@
   --accent-soft: rgba(255, 140, 66, 0.15);
   --border: #333333;
   --danger: #ff3b3b;
+  --success: #28a745;
+  --warning: #ffc107;
+  --info: #4a9eff;
 }
 
 * {
@@ -103,7 +106,6 @@ body.text-editing {
   pointer-events: none;
 }
 
-/* ТУЛТИП */
 .coach-tooltip {
   position: absolute;
   top: 50%;
@@ -371,7 +373,7 @@ input[type="file"] {
   z-index: 500;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
   animation: slideUp 0.3s ease;
-  max-height: 60vh;
+  max-height: 65vh;
   overflow-y: auto;
 }
 
@@ -390,6 +392,36 @@ input[type="file"] {
   background: #555;
   border-radius: 2px;
   margin: 0 auto 12px;
+}
+
+.text-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.text-editor-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.text-editor-add {
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.text-editor-add:active {
+  transform: scale(0.95);
 }
 
 .text-editor-tabs {
@@ -628,4 +660,151 @@ input[type="file"] {
 .btn-danger:active,
 .btn-primary:active {
   transform: scale(0.97);
+}
+
+/* ============================================
+   КАСТОМНЫЙ АЛЕРТ
+   ============================================ */
+
+.custom-alert-overlay,
+.custom-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.2s ease;
+  padding: 20px;
+}
+
+.custom-alert,
+.custom-confirm {
+  background: var(--bg-card);
+  border-radius: 20px;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  animation: popIn 0.25s ease;
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.custom-alert-icon,
+.custom-confirm-icon {
+  font-size: 56px;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.custom-alert-message,
+.custom-confirm-message {
+  font-size: 16px;
+  color: var(--text);
+  margin-bottom: 20px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.custom-alert-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  border: none;
+  color: #ffffff;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s ease;
+}
+
+.custom-alert-btn:active {
+  transform: scale(0.97);
+}
+
+.custom-confirm-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.custom-confirm-btn {
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s ease;
+}
+
+.custom-confirm-btn:active {
+  transform: scale(0.97);
+}
+
+.custom-confirm-btn.cancel {
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+.custom-confirm-btn.confirm {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #ffffff;
+}
+
+.custom-confirm-btn.confirm.danger {
+  background: var(--danger);
+}
+
+/* ============================================
+   TOAST
+   ============================================ */
+
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 2500;
+  pointer-events: none;
+  animation: toastIn 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  max-width: 90vw;
+  text-align: center;
+}
+
+@keyframes toastIn {
+  from {
+    transform: translate(-50%, 100px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
 }

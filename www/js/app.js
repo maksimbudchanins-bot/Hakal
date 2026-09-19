@@ -10,7 +10,7 @@ function log(message) {
 log("========== Приложение запущено ==========");
 
 // ============================================
-// ЗАГЛУШКА ДЛЯ TELEGRAM
+// TELEGRAM
 // ============================================
 const tg = window.Telegram?.WebApp || {
   expand: () => {},
@@ -30,22 +30,97 @@ if (window.Telegram?.WebApp) {
 
 const isRealTelegram = !!(tg && tg.initData);
 
-function safeAlert(message) {
-  if (isRealTelegram && tg.showAlert) {
-    try {
-      tg.showAlert(message);
-      return;
-    } catch (e) {}
-  }
-  alert(message);
-}
-
 function vibrate(pattern) {
   if (navigator.vibrate) {
     try {
       navigator.vibrate(pattern);
     } catch (e) {}
   }
+}
+
+// ============================================
+// КАСТОМНЫЕ УВЕДОМЛЕНИЯ
+// ============================================
+const alertOverlay = document.getElementById("customAlertOverlay");
+const alertIcon = document.getElementById("customAlertIcon");
+const alertMessage = document.getElementById("customAlertMessage");
+const alertBtn = document.getElementById("customAlertBtn");
+
+const confirmOverlay = document.getElementById("customConfirmOverlay");
+const confirmIcon = document.getElementById("customConfirmIcon");
+const confirmMessage = document.getElementById("customConfirmMessage");
+const confirmOk = document.getElementById("customConfirmOk");
+const confirmCancel = document.getElementById("customConfirmCancel");
+
+const toast = document.getElementById("toast");
+
+const ICONS = {
+  success: "✅",
+  error: "❌",
+  warning: "⚠️",
+  info: "ℹ️",
+  question: "❓",
+};
+
+function showAlert(message, type = "info") {
+  log("Алерт [" + type + "]: " + message);
+  alertIcon.innerText = ICONS[type] || ICONS.info;
+  alertMessage.innerText = message;
+  alertOverlay.style.display = "flex";
+  vibrate(20);
+}
+
+alertBtn.addEventListener("click", () => {
+  alertOverlay.style.display = "none";
+});
+
+function showConfirm(
+  message,
+  { confirmText = "ОК", cancelText = "Отмена", danger = false } = {},
+) {
+  return new Promise((resolve) => {
+    log("Confirm: " + message);
+    confirmIcon.innerText = ICONS.question;
+    confirmMessage.innerText = message;
+    confirmOk.innerText = confirmText;
+    confirmCancel.innerText = cancelText;
+    confirmOk.classList.toggle("danger", danger);
+    confirmOverlay.style.display = "flex";
+    vibrate(20);
+
+    const cleanup = () => {
+      confirmOk.removeEventListener("click", onOk);
+      confirmCancel.removeEventListener("click", onCancel);
+      confirmOverlay.style.display = "none";
+    };
+
+    const onOk = () => {
+      cleanup();
+      resolve(true);
+    };
+    const onCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    confirmOk.addEventListener("click", onOk);
+    confirmCancel.addEventListener("click", onCancel);
+  });
+}
+
+let toastTimeout = null;
+
+function showToast(message, duration = 2000) {
+  log("Toast: " + message);
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toast.innerText = message;
+  toast.style.display = "block";
+  toast.style.animation = "none";
+  void toast.offsetWidth;
+  toast.style.animation = "toastIn 0.3s ease";
+  toastTimeout = setTimeout(() => {
+    toast.style.display = "none";
+  }, duration);
 }
 
 // ============================================
@@ -67,7 +142,9 @@ const fullscreenCanvas = document.getElementById("fullscreenCanvas");
 const fullscreenClose = document.getElementById("fullscreenClose");
 
 const addTextBtn = document.getElementById("addTextBtn");
+const addAnotherTextBtn = document.getElementById("addAnotherTextBtn");
 const textEditor = document.getElementById("textEditor");
+const textEditorTitle = document.getElementById("textEditorTitle");
 const textInput = document.getElementById("textInput");
 const deleteTextBtn = document.getElementById("deleteTextBtn");
 const doneTextBtn = document.getElementById("doneTextBtn");
@@ -96,8 +173,12 @@ const allInputs = [
 
 let originalImage = new Image();
 let isImageLoaded = false;
-let currentText = null;
 let isTextEditing = false;
+
+// МНОЖЕСТВЕННЫЕ ТЕКСТЫ
+let texts = [];
+let activeTextIndex = -1;
+
 const holdTimers = {};
 
 // ============================================
@@ -275,7 +356,7 @@ document.querySelectorAll(".stepper").forEach((stepper) => {
 allInputs.forEach((input) => setInputValue(input.id, parseFloat(input.value)));
 
 // ============================================
-// ЗАГРУЗКА КАРТИНКИ
+// ЗАГРУЗКА
 // ============================================
 fileInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
@@ -394,54 +475,89 @@ function applyEffects() {
 }
 
 // ============================================
-// ТЕКСТ С ПОВОРОТОМ
+// ОТРИСОВКА ВСЕХ ТЕКСТОВ
 // ============================================
-function drawText() {
-  if (!isImageLoaded) return;
+function drawTextShape(ctx2d, t, isActive) {
+  ctx2d.save();
+  ctx2d.translate(t.x, t.y);
+  ctx2d.rotate((t.rotation * Math.PI) / 180);
+
+  ctx2d.font = `${t.fontSize}px "${t.font}", Arial, sans-serif`;
+  ctx2d.textAlign = "center";
+  ctx2d.textBaseline = "middle";
+
+  if (t.shadowEnabled) {
+    ctx2d.shadowColor = "rgba(0,0,0,0.8)";
+    ctx2d.shadowBlur = t.shadowBlur;
+    ctx2d.shadowOffsetX = t.shadowOffset;
+    ctx2d.shadowOffsetY = t.shadowOffset;
+  } else {
+    ctx2d.shadowColor = "transparent";
+    ctx2d.shadowBlur = 0;
+    ctx2d.shadowOffsetX = 0;
+    ctx2d.shadowOffsetY = 0;
+  }
+
+  if (t.strokeEnabled) {
+    ctx2d.strokeStyle = t.strokeColor;
+    ctx2d.lineWidth = t.strokeWidth;
+    ctx2d.lineJoin = "round";
+    ctx2d.strokeText(t.value, 0, 0);
+  }
+
+  ctx2d.fillStyle = t.color;
+  ctx2d.fillText(t.value, 0, 0);
+
+  // Сброс тени
+  ctx2d.shadowColor = "transparent";
+  ctx2d.shadowBlur = 0;
+  ctx2d.shadowOffsetX = 0;
+  ctx2d.shadowOffsetY = 0;
+
+  ctx2d.restore();
+}
+
+function redrawAllTexts() {
   overlayCanvas.width = canvas.width;
   overlayCanvas.height = canvas.height;
   overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
-  if (!currentText || !currentText.value) return;
+  texts.forEach((t, index) => {
+    if (!t.value) return;
 
-  const t = currentText;
-  overlayCtx.save();
+    // Отрисовка текста
+    drawTextShape(overlayCtx, t, false);
 
-  // Поворот вокруг центра текста
-  overlayCtx.translate(t.x, t.y);
-  overlayCtx.rotate((t.rotation * Math.PI) / 180);
+    // Активный текст — рамка
+    if (index === activeTextIndex && isTextEditing) {
+      overlayCtx.save();
+      overlayCtx.translate(t.x, t.y);
+      overlayCtx.rotate((t.rotation * Math.PI) / 180);
 
-  overlayCtx.font = `${t.fontSize}px "${t.font}", Arial, sans-serif`;
-  overlayCtx.textAlign = "center";
-  overlayCtx.textBaseline = "middle";
+      overlayCtx.font = `${t.fontSize}px "${t.font}", Arial, sans-serif`;
+      const metrics = overlayCtx.measureText(t.value);
+      const textWidth = metrics.width;
+      const textHeight = t.fontSize * 1.2;
 
-  if (t.shadowEnabled) {
-    overlayCtx.shadowColor = "rgba(0,0,0,0.8)";
-    overlayCtx.shadowBlur = t.shadowBlur;
-    overlayCtx.shadowOffsetX = t.shadowOffset;
-    overlayCtx.shadowOffsetY = t.shadowOffset;
-  } else {
-    overlayCtx.shadowColor = "transparent";
-    overlayCtx.shadowBlur = 0;
-    overlayCtx.shadowOffsetX = 0;
-    overlayCtx.shadowOffsetY = 0;
-  }
+      overlayCtx.strokeStyle = "#ff8c42";
+      overlayCtx.lineWidth = 2;
+      overlayCtx.setLineDash([6, 4]);
 
-  if (t.strokeEnabled) {
-    overlayCtx.strokeStyle = t.strokeColor;
-    overlayCtx.lineWidth = t.strokeWidth;
-    overlayCtx.lineJoin = "round";
-    overlayCtx.strokeText(t.value, 0, 0);
-  }
+      const padding = 8;
+      overlayCtx.strokeRect(
+        -textWidth / 2 - padding,
+        -textHeight / 2 - padding,
+        textWidth + padding * 2,
+        textHeight + padding * 2,
+      );
 
-  overlayCtx.fillStyle = t.color;
-  overlayCtx.fillText(t.value, 0, 0);
-
-  overlayCtx.restore();
+      overlayCtx.restore();
+    }
+  });
 }
 
 // ============================================
-// ВЗАИМОДЕЙСТВИЕ
+// ВЗАИМОДЕЙСТВИЕ С ТЕКСТОМ
 // ============================================
 let isDraggingText = false;
 let dragStartX = 0,
@@ -477,31 +593,98 @@ function getPinchAngle(e) {
   return Math.atan2(dy, dx) * (180 / Math.PI);
 }
 
+// Поиск текста под пальцем
+function findTextAtPoint(x, y) {
+  for (let i = texts.length - 1; i >= 0; i--) {
+    const t = texts[i];
+    if (!t.value) continue;
+
+    // Обратное преобразование: смещаем точку в систему координат текста
+    const dx = x - t.x;
+    const dy = y - t.y;
+    const angle = -(t.rotation * Math.PI) / 180;
+    const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+    const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
+
+    // Примерные размеры текста
+    const textWidth = t.value.length * t.fontSize * 0.55;
+    const textHeight = t.fontSize * 1.2;
+
+    if (
+      Math.abs(rx) < textWidth / 2 + 10 &&
+      Math.abs(ry) < textHeight / 2 + 10
+    ) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function setActiveText(index) {
+  activeTextIndex = index;
+  if (index < 0) return;
+
+  const t = texts[index];
+  textEditorTitle.innerText = `Текст #${index + 1}`;
+
+  // Обновляем UI
+  textInput.value = t.value;
+  document.getElementById("valFontSize").innerText = t.fontSize;
+  document.getElementById("valStrokeWidth").innerText = t.strokeWidth;
+  document.getElementById("valShadowOffset").innerText = t.shadowOffset;
+  document.getElementById("valShadowBlur").innerText = t.shadowBlur;
+  document.getElementById("valRotation").innerText =
+    Math.round(t.rotation) + "°";
+
+  strokeToggle.classList.toggle("active", t.strokeEnabled);
+  shadowToggle.classList.toggle("active", t.shadowEnabled);
+  strokeToggle.innerText = t.strokeEnabled ? "ВКЛ" : "ВЫКЛ";
+  shadowToggle.innerText = t.shadowEnabled ? "ВКЛ" : "ВЫКЛ";
+
+  document.querySelectorAll(".font-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.font === t.font);
+  });
+
+  redrawAllTexts();
+}
+
+// Touch-события на overlay
 overlayCanvas.addEventListener(
   "touchstart",
   (e) => {
-    if (!currentText || !isTextEditing) return;
+    if (!isImageLoaded || !isTextEditing) return;
     e.preventDefault();
 
-    // Скрываем тултип при первом жесте
     if (!hasShownTooltip && coachTooltip.style.display !== "none") {
       coachTooltip.style.display = "none";
       hasShownTooltip = true;
     }
 
     if (e.touches.length === 1) {
-      isDraggingText = true;
       const pos = getTouchPos(e, overlayCanvas);
-      dragStartX = pos.x;
-      dragStartY = pos.y;
-      textStartX = currentText.x;
-      textStartY = currentText.y;
-    } else if (e.touches.length === 2) {
+      const foundIndex = findTextAtPoint(pos.x, pos.y);
+
+      if (foundIndex >= 0 && foundIndex !== activeTextIndex) {
+        // Тапнули по другому тексту — переключаемся
+        log("Переключаюсь на текст #" + (foundIndex + 1));
+        setActiveText(foundIndex);
+      }
+
+      if (activeTextIndex >= 0) {
+        isDraggingText = true;
+        dragStartX = pos.x;
+        dragStartY = pos.y;
+        const t = texts[activeTextIndex];
+        textStartX = t.x;
+        textStartY = t.y;
+      }
+    } else if (e.touches.length === 2 && activeTextIndex >= 0) {
       isDraggingText = false;
       initialPinchDistance = getPinchDistance(e);
-      initialFontSize = currentText.fontSize;
+      const t = texts[activeTextIndex];
+      initialFontSize = t.fontSize;
       initialPinchAngle = getPinchAngle(e);
-      initialRotation = currentText.rotation || 0;
+      initialRotation = t.rotation || 0;
     }
   },
   { passive: false },
@@ -510,38 +693,34 @@ overlayCanvas.addEventListener(
 overlayCanvas.addEventListener(
   "touchmove",
   (e) => {
-    if (!currentText || !isTextEditing) return;
+    if (!isTextEditing || activeTextIndex < 0) return;
     e.preventDefault();
+
+    const t = texts[activeTextIndex];
 
     if (isDraggingText && e.touches.length === 1) {
       const pos = getTouchPos(e, overlayCanvas);
-      currentText.x = textStartX + (pos.x - dragStartX);
-      currentText.y = textStartY + (pos.y - dragStartY);
-      drawText();
+      t.x = textStartX + (pos.x - dragStartX);
+      t.y = textStartY + (pos.y - dragStartY);
+      redrawAllTexts();
     } else if (e.touches.length === 2 && initialPinchDistance > 0) {
-      // Масштаб
       const newDistance = getPinchDistance(e);
       const scale = newDistance / initialPinchDistance;
-      currentText.fontSize = Math.max(
+      t.fontSize = Math.max(
         10,
         Math.min(300, Math.round(initialFontSize * scale)),
       );
-      const fontSizeEl = document.getElementById("valFontSize");
-      if (fontSizeEl) fontSizeEl.innerText = currentText.fontSize;
+      document.getElementById("valFontSize").innerText = t.fontSize;
 
-      // Поворот
       const currentAngle = getPinchAngle(e);
       const angleDiff = currentAngle - initialPinchAngle;
-      currentText.rotation = (initialRotation + angleDiff) % 360;
-      const rotationEl = document.getElementById("valRotation");
-      if (rotationEl)
-        rotationEl.innerText = Math.round(currentText.rotation) + "°";
+      t.rotation = (initialRotation + angleDiff) % 360;
+      document.getElementById("valRotation").innerText =
+        Math.round(t.rotation) + "°";
 
-      // Haptic каждые ~15°
-      const roundedAngle = Math.round(currentText.rotation / 15) * 15;
-      if (roundedAngle !== currentText._lastHapticAngle) {
-        currentText._lastHapticAngle = roundedAngle;
-        // Особенно сильная вибрация на 0, 90, 180, 270
+      const roundedAngle = Math.round(t.rotation / 15) * 15;
+      if (roundedAngle !== t._lastHapticAngle) {
+        t._lastHapticAngle = roundedAngle;
         const abs = Math.abs(roundedAngle % 360);
         if (abs === 0 || abs === 90 || abs === 180 || abs === 270) {
           vibrate([30, 20, 30]);
@@ -550,7 +729,7 @@ overlayCanvas.addEventListener(
         }
       }
 
-      drawText();
+      redrawAllTexts();
     }
   },
   { passive: false },
@@ -562,22 +741,29 @@ overlayCanvas.addEventListener("touchend", () => {
   initialPinchAngle = 0;
 });
 
+// Mouse для ПК
 overlayCanvas.addEventListener("mousedown", (e) => {
-  if (!currentText || !isTextEditing) return;
-  isDraggingText = true;
+  if (!isImageLoaded || !isTextEditing) return;
   const pos = getTouchPos(e, overlayCanvas);
-  dragStartX = pos.x;
-  dragStartY = pos.y;
-  textStartX = currentText.x;
-  textStartY = currentText.y;
+  const foundIndex = findTextAtPoint(pos.x, pos.y);
+  if (foundIndex >= 0) {
+    setActiveText(foundIndex);
+    isDraggingText = true;
+    dragStartX = pos.x;
+    dragStartY = pos.y;
+    const t = texts[activeTextIndex];
+    textStartX = t.x;
+    textStartY = t.y;
+  }
 });
 
 overlayCanvas.addEventListener("mousemove", (e) => {
-  if (!isDraggingText || !currentText) return;
+  if (!isDraggingText || activeTextIndex < 0) return;
+  const t = texts[activeTextIndex];
   const pos = getTouchPos(e, overlayCanvas);
-  currentText.x = textStartX + (pos.x - dragStartX);
-  currentText.y = textStartY + (pos.y - dragStartY);
-  drawText();
+  t.x = textStartX + (pos.x - dragStartX);
+  t.y = textStartY + (pos.y - dragStartY);
+  redrawAllTexts();
 });
 
 overlayCanvas.addEventListener("mouseup", () => {
@@ -588,20 +774,13 @@ overlayCanvas.addEventListener("mouseleave", () => {
 });
 
 // ============================================
-// ДОБАВЛЕНИЕ ТЕКСТА
+// СОЗДАНИЕ НОВОГО ТЕКСТА
 // ============================================
-addTextBtn.addEventListener("click", () => {
-  if (!isImageLoaded) {
-    safeAlert("Сначала загрузите картинку!");
-    return;
-  }
-
-  log("Добавляю текст");
-
-  currentText = {
+function createNewText() {
+  const newText = {
     value: "Ваш текст",
-    x: canvas.width / 2,
-    y: canvas.height / 2,
+    x: canvas.width / 2 + ((texts.length * 30) % 100) - 50,
+    y: canvas.height / 2 + ((texts.length * 40) % 100) - 50,
     fontSize: 60,
     rotation: 0,
     font: "Impact",
@@ -614,29 +793,24 @@ addTextBtn.addEventListener("click", () => {
     shadowBlur: 4,
     _lastHapticAngle: 0,
   };
+  texts.push(newText);
+  return texts.length - 1;
+}
 
-  textInput.value = currentText.value;
-  document.getElementById("valFontSize").innerText = currentText.fontSize;
-  document.getElementById("valStrokeWidth").innerText = currentText.strokeWidth;
-  document.getElementById("valShadowOffset").innerText =
-    currentText.shadowOffset;
-  document.getElementById("valShadowBlur").innerText = currentText.shadowBlur;
-  document.getElementById("valRotation").innerText = "0°";
+addTextBtn.addEventListener("click", () => {
+  if (!isImageLoaded) {
+    showAlert("Сначала загрузите картинку!", "warning");
+    return;
+  }
 
-  strokeToggle.classList.toggle("active", currentText.strokeEnabled);
-  shadowToggle.classList.toggle("active", currentText.shadowEnabled);
-  strokeToggle.innerText = currentText.strokeEnabled ? "ВКЛ" : "ВЫКЛ";
-  shadowToggle.innerText = currentText.shadowEnabled ? "ВКЛ" : "ВЫКЛ";
-
-  document.querySelectorAll(".font-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.font === currentText.font);
-  });
+  log("Добавляю текст");
+  const index = createNewText();
+  setActiveText(index);
 
   textEditor.style.display = "block";
   isTextEditing = true;
   document.body.classList.add("text-editing");
 
-  // Показываем тултип при первом добавлении
   if (!hasShownTooltip) {
     coachTooltip.style.display = "block";
     setTimeout(() => {
@@ -647,24 +821,37 @@ addTextBtn.addEventListener("click", () => {
     }, 5000);
   }
 
-  drawText();
+  redrawAllTexts();
+  showToast("💬 Текст добавлен");
 });
 
+addAnotherTextBtn.addEventListener("click", () => {
+  if (!isImageLoaded) return;
+  log("Добавляю ещё текст");
+  const index = createNewText();
+  setActiveText(index);
+  redrawAllTexts();
+  showToast("💬 Ещё один текст");
+});
+
+// ============================================
+// РЕДАКТОР
+// ============================================
 textInput.addEventListener("input", () => {
-  if (!currentText) return;
-  currentText.value = textInput.value;
-  drawText();
+  if (activeTextIndex < 0) return;
+  texts[activeTextIndex].value = textInput.value;
+  redrawAllTexts();
 });
 
 document.querySelectorAll(".font-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    if (!currentText) return;
-    currentText.font = btn.dataset.font;
+    if (activeTextIndex < 0) return;
+    texts[activeTextIndex].font = btn.dataset.font;
     document
       .querySelectorAll(".font-btn")
       .forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
-    drawText();
+    redrawAllTexts();
   });
 });
 
@@ -672,43 +859,30 @@ document.querySelectorAll(".font-btn").forEach((btn) => {
 const miniHoldTimers = {};
 
 function changeTextProp(btn) {
-  if (!currentText) return;
+  if (activeTextIndex < 0) return;
+  const t = texts[activeTextIndex];
   const prop = btn.dataset.textProp;
   const dir = parseInt(btn.dataset.dir);
   const step = prop === "fontSize" ? 5 : prop === "rotation" ? 5 : 1;
 
   if (prop === "fontSize") {
-    currentText.fontSize = Math.max(
-      10,
-      Math.min(300, currentText.fontSize + dir * step),
-    );
-    document.getElementById("valFontSize").innerText = currentText.fontSize;
+    t.fontSize = Math.max(10, Math.min(300, t.fontSize + dir * step));
+    document.getElementById("valFontSize").innerText = t.fontSize;
   } else if (prop === "strokeWidth") {
-    currentText.strokeWidth = Math.max(
-      1,
-      Math.min(20, currentText.strokeWidth + dir * step),
-    );
-    document.getElementById("valStrokeWidth").innerText =
-      currentText.strokeWidth;
+    t.strokeWidth = Math.max(1, Math.min(20, t.strokeWidth + dir * step));
+    document.getElementById("valStrokeWidth").innerText = t.strokeWidth;
   } else if (prop === "shadowOffset") {
-    currentText.shadowOffset = Math.max(
-      0,
-      Math.min(20, currentText.shadowOffset + dir * step),
-    );
-    document.getElementById("valShadowOffset").innerText =
-      currentText.shadowOffset;
+    t.shadowOffset = Math.max(0, Math.min(20, t.shadowOffset + dir * step));
+    document.getElementById("valShadowOffset").innerText = t.shadowOffset;
   } else if (prop === "shadowBlur") {
-    currentText.shadowBlur = Math.max(
-      0,
-      Math.min(20, currentText.shadowBlur + dir * step),
-    );
-    document.getElementById("valShadowBlur").innerText = currentText.shadowBlur;
+    t.shadowBlur = Math.max(0, Math.min(20, t.shadowBlur + dir * step));
+    document.getElementById("valShadowBlur").innerText = t.shadowBlur;
   } else if (prop === "rotation") {
-    currentText.rotation = (currentText.rotation + dir * step) % 360;
+    t.rotation = (t.rotation + dir * step) % 360;
     document.getElementById("valRotation").innerText =
-      Math.round(currentText.rotation) + "°";
+      Math.round(t.rotation) + "°";
   }
-  drawText();
+  redrawAllTexts();
 }
 
 document.querySelectorAll(".mini-step-btn").forEach((btn) => {
@@ -756,24 +930,23 @@ document.querySelectorAll(".mini-step-btn").forEach((btn) => {
   btn.addEventListener("mouseleave", () => stopMiniHold(timerKey));
 });
 
-// Кнопка сброса поворота
 resetRotationBtn.addEventListener("click", () => {
-  if (!currentText) return;
-  currentText.rotation = 0;
+  if (activeTextIndex < 0) return;
+  texts[activeTextIndex].rotation = 0;
   document.getElementById("valRotation").innerText = "0°";
   vibrate(20);
-  drawText();
+  redrawAllTexts();
 });
 
 document.querySelectorAll(".color-swatch[data-color]").forEach((swatch) => {
   swatch.addEventListener("click", () => {
-    if (!currentText) return;
-    currentText.color = swatch.dataset.color;
+    if (activeTextIndex < 0) return;
+    texts[activeTextIndex].color = swatch.dataset.color;
     document
       .querySelectorAll(".color-swatch[data-color]")
       .forEach((s) => s.classList.remove("active"));
     swatch.classList.add("active");
-    drawText();
+    redrawAllTexts();
   });
 });
 
@@ -781,36 +954,39 @@ document
   .querySelectorAll(".color-swatch[data-stroke-color]")
   .forEach((swatch) => {
     swatch.addEventListener("click", () => {
-      if (!currentText) return;
-      currentText.strokeColor = swatch.dataset.strokeColor;
+      if (activeTextIndex < 0) return;
+      texts[activeTextIndex].strokeColor = swatch.dataset.strokeColor;
       document
         .querySelectorAll(".color-swatch[data-stroke-color]")
         .forEach((s) => s.classList.remove("active"));
       swatch.classList.add("active");
-      drawText();
+      redrawAllTexts();
     });
   });
 
 strokeToggle.addEventListener("click", () => {
-  if (!currentText) return;
-  currentText.strokeEnabled = !currentText.strokeEnabled;
-  strokeToggle.classList.toggle("active", currentText.strokeEnabled);
-  strokeToggle.innerText = currentText.strokeEnabled ? "ВКЛ" : "ВЫКЛ";
-  drawText();
+  if (activeTextIndex < 0) return;
+  const t = texts[activeTextIndex];
+  t.strokeEnabled = !t.strokeEnabled;
+  strokeToggle.classList.toggle("active", t.strokeEnabled);
+  strokeToggle.innerText = t.strokeEnabled ? "ВКЛ" : "ВЫКЛ";
+  redrawAllTexts();
 });
 
 shadowToggle.addEventListener("click", () => {
-  if (!currentText) return;
-  currentText.shadowEnabled = !currentText.shadowEnabled;
-  shadowToggle.classList.toggle("active", currentText.shadowEnabled);
-  shadowToggle.innerText = currentText.shadowEnabled ? "ВКЛ" : "ВЫКЛ";
-  drawText();
+  if (activeTextIndex < 0) return;
+  const t = texts[activeTextIndex];
+  t.shadowEnabled = !t.shadowEnabled;
+  shadowToggle.classList.toggle("active", t.shadowEnabled);
+  shadowToggle.innerText = t.shadowEnabled ? "ВКЛ" : "ВЫКЛ";
+  redrawAllTexts();
 });
 
 autoContrastBtn.addEventListener("click", () => {
-  if (!currentText || !isImageLoaded) return;
-  const sampleX = Math.floor(currentText.x);
-  const sampleY = Math.floor(currentText.y);
+  if (activeTextIndex < 0 || !isImageLoaded) return;
+  const t = texts[activeTextIndex];
+  const sampleX = Math.floor(t.x);
+  const sampleY = Math.floor(t.y);
   if (
     sampleX < 0 ||
     sampleY < 0 ||
@@ -820,9 +996,10 @@ autoContrastBtn.addEventListener("click", () => {
     return;
   const pixel = ctx.getImageData(sampleX, sampleY, 1, 1).data;
   const brightness = (pixel[0] * 299 + pixel[1] * 587 + pixel[2] * 114) / 1000;
-  currentText.color = brightness < 128 ? "#ffffff" : "#000000";
-  log("Авто-контраст: " + currentText.color);
-  drawText();
+  t.color = brightness < 128 ? "#ffffff" : "#000000";
+  log("Авто-контраст: " + t.color);
+  redrawAllTexts();
+  showToast("🎨 Авто-контраст: " + t.color);
 });
 
 document.querySelectorAll(".text-tab").forEach((tab) => {
@@ -844,22 +1021,41 @@ doneTextBtn.addEventListener("click", () => {
   log("Закрываю редактор текста");
   textEditor.style.display = "none";
   isTextEditing = false;
+  activeTextIndex = -1;
   document.body.classList.remove("text-editing");
   coachTooltip.style.display = "none";
+  redrawAllTexts();
+  showToast("✓ Готово");
 });
 
-deleteTextBtn.addEventListener("click", () => {
-  log("Удаляю текст");
-  currentText = null;
-  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-  textEditor.style.display = "none";
-  isTextEditing = false;
-  document.body.classList.remove("text-editing");
-  coachTooltip.style.display = "none";
+deleteTextBtn.addEventListener("click", async () => {
+  if (activeTextIndex < 0) return;
+
+  const confirmed = await showConfirm(
+    `Удалить текст #${activeTextIndex + 1}?`,
+    { confirmText: "Удалить", cancelText: "Отмена", danger: true },
+  );
+
+  if (!confirmed) return;
+
+  log("Удаляю текст #" + (activeTextIndex + 1));
+  texts.splice(activeTextIndex, 1);
+
+  if (texts.length === 0) {
+    textEditor.style.display = "none";
+    isTextEditing = false;
+    activeTextIndex = -1;
+    document.body.classList.remove("text-editing");
+  } else {
+    setActiveText(Math.min(activeTextIndex, texts.length - 1));
+  }
+
+  redrawAllTexts();
+  showToast("🗑 Текст удалён");
 });
 
 // ============================================
-// МОДАЛКА
+// МОДАЛКА ПОЛНОЭКРАННОГО ПРОСМОТРА
 // ============================================
 function openFullscreen() {
   if (!isImageLoaded) return;
@@ -868,7 +1064,7 @@ function openFullscreen() {
   fullscreenCanvas.height = canvas.height;
   const fsCtx = fullscreenCanvas.getContext("2d");
   fsCtx.drawImage(canvas, 0, 0);
-  if (currentText) {
+  if (texts.length > 0) {
     fsCtx.drawImage(overlayCanvas, 0, 0);
   }
   fullscreenPreview.style.display = "flex";
@@ -896,9 +1092,15 @@ fullscreenClose.addEventListener("click", (e) => {
 });
 
 // ============================================
-// КНОПКИ
+// ОБЩИЕ КНОПКИ
 // ============================================
-resetBtn.addEventListener("click", () => {
+resetBtn.addEventListener("click", async () => {
+  const confirmed = await showConfirm(
+    "Сбросить все настройки и удалить все тексты?",
+    { confirmText: "Сбросить", cancelText: "Отмена", danger: true },
+  );
+  if (!confirmed) return;
+
   log("Сброс настроек");
   clearAllHoldTimers();
   setInputValue("shakal", 1);
@@ -909,7 +1111,8 @@ resetBtn.addEventListener("click", () => {
   setInputValue("glitch", 0);
   setInputValue("chromatic", 0);
 
-  currentText = null;
+  texts = [];
+  activeTextIndex = -1;
   overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
   textEditor.style.display = "none";
   isTextEditing = false;
@@ -917,22 +1120,24 @@ resetBtn.addEventListener("click", () => {
   coachTooltip.style.display = "none";
 
   applyEffects();
+  showToast("🔄 Сброшено");
 });
 
 downloadBtn.addEventListener("click", async () => {
   if (!isImageLoaded) {
-    safeAlert("Сначала загрузите картинку!");
+    showAlert("Сначала загрузите картинку!", "warning");
     return;
   }
 
   log("Начинаю сохранение...");
+  showToast("⏳ Сохраняю...");
 
   const finalCanvas = document.createElement("canvas");
   finalCanvas.width = canvas.width;
   finalCanvas.height = canvas.height;
   const finalCtx = finalCanvas.getContext("2d");
   finalCtx.drawImage(canvas, 0, 0);
-  if (currentText) {
+  if (texts.length > 0) {
     finalCtx.drawImage(overlayCanvas, 0, 0);
   }
 
@@ -947,6 +1152,7 @@ downloadBtn.addEventListener("click", async () => {
     try {
       tg.downloadFile({ url: imageDataUrl, file_name: "shakal_art.png" });
       log("Сохранено через Telegram");
+      showAlert("Картинка сохранена!", "success");
       return;
     } catch (err) {
       log("downloadFile не сработал: " + err);
@@ -973,14 +1179,14 @@ downloadBtn.addEventListener("click", async () => {
           albumIdentifier: shakalAlbum.identifier,
         });
         log("Сохранено в альбом Shakal");
-        safeAlert("✅ Картинка сохранена в Галерею!");
+        showAlert("Картинка сохранена в Галерею!", "success");
       } else {
-        safeAlert("❌ Не удалось найти альбом Shakal");
+        showAlert("Не удалось найти альбом Shakal", "error");
       }
       return;
     } catch (err) {
       log("Ошибка Media: " + err);
-      safeAlert("❌ Ошибка: " + (err.message || err));
+      showAlert("Ошибка: " + (err.message || err), "error");
       return;
     }
   }
@@ -989,6 +1195,7 @@ downloadBtn.addEventListener("click", async () => {
   link.download = "shakal_art.png";
   link.href = imageDataUrl;
   link.click();
+  showAlert("Картинка сохранена!", "success");
 });
 
 log("========== Все обработчики навешаны ==========");

@@ -27,7 +27,6 @@
           👆 Тап — на весь экран
         </div>
 
-        <!-- ТУЛТИП-ПОДСКАЗКА -->
         <div class="coach-tooltip" id="coachTooltip" style="display: none">
           ✌️ Двумя пальцами — крутить и масштабировать
         </div>
@@ -185,6 +184,12 @@
 
     <div class="text-editor" id="textEditor" style="display: none">
       <div class="text-editor-handle"></div>
+      <div class="text-editor-header">
+        <span class="text-editor-title" id="textEditorTitle">Текст #1</span>
+        <button class="text-editor-add" id="addAnotherTextBtn">
+          ➕ Ещё текст
+        </button>
+      </div>
       <div class="text-editor-tabs">
         <button class="text-tab active" data-tab="font">Шрифт</button>
         <button class="text-tab" data-tab="color">Цвет</button>
@@ -372,7 +377,6 @@
         </div>
       </div>
 
-      <!-- ВКЛАДКА ФОРМАТ -->
       <div class="text-tab-content" data-content="transform">
         <div class="row-control">
           <span>↻ Поворот</span>
@@ -407,6 +411,46 @@
         <button class="btn-primary" id="doneTextBtn">✓ Готово</button>
       </div>
     </div>
+
+    <!-- КАСТОМНЫЙ АЛЕРТ -->
+    <div
+      class="custom-alert-overlay"
+      id="customAlertOverlay"
+      style="display: none"
+    >
+      <div class="custom-alert" id="customAlert">
+        <div class="custom-alert-icon" id="customAlertIcon">✅</div>
+        <div class="custom-alert-message" id="customAlertMessage">
+          Сообщение
+        </div>
+        <button class="custom-alert-btn" id="customAlertBtn">ОК</button>
+      </div>
+    </div>
+
+    <!-- КАСТОМНЫЙ CONFIRM -->
+    <div
+      class="custom-confirm-overlay"
+      id="customConfirmOverlay"
+      style="display: none"
+    >
+      <div class="custom-confirm">
+        <div class="custom-confirm-icon" id="customConfirmIcon">❓</div>
+        <div class="custom-confirm-message" id="customConfirmMessage">
+          Вопрос?
+        </div>
+        <div class="custom-confirm-buttons">
+          <button class="custom-confirm-btn cancel" id="customConfirmCancel">
+            Отмена
+          </button>
+          <button class="custom-confirm-btn confirm" id="customConfirmOk">
+            ОК
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast" style="display: none"></div>
 
     <script src="js/app.js"></script>
   </body>
