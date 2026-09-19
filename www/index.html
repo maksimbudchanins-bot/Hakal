@@ -22,6 +22,7 @@
           <div class="placeholder-text">Нажми «Загрузить картинку»</div>
         </div>
         <canvas id="imageCanvas"></canvas>
+        <canvas id="overlayCanvas" class="overlay-canvas"></canvas>
         <div class="canvas-hint" id="canvasHint" style="display: none">
           👆 Тап — на весь экран
         </div>
@@ -42,6 +43,10 @@
           <button class="preset-btn" data-preset="vintage">📼 Винтаж</button>
           <button class="preset-btn" data-preset="glitch">👾 Глитч</button>
         </div>
+
+        <button class="btn btn-text-tool" id="addTextBtn">
+          💬 Добавить текст
+        </button>
 
         <div class="control-group">
           <label>Шакализация (Пиксели)</label>
@@ -164,7 +169,6 @@
       </div>
     </main>
 
-    <!-- МОДАЛКА ПОЛНОЭКРАННОГО ПРОСМОТРА -->
     <div
       class="fullscreen-preview"
       id="fullscreenPreview"
@@ -172,6 +176,200 @@
     >
       <canvas id="fullscreenCanvas"></canvas>
       <button class="fullscreen-close" id="fullscreenClose">✕</button>
+    </div>
+
+    <div class="text-editor" id="textEditor" style="display: none">
+      <div class="text-editor-handle"></div>
+      <div class="text-editor-tabs">
+        <button class="text-tab active" data-tab="font">Шрифт</button>
+        <button class="text-tab" data-tab="color">Цвет</button>
+        <button class="text-tab" data-tab="stroke">Обводка</button>
+        <button class="text-tab" data-tab="shadow">Тень</button>
+      </div>
+
+      <div class="text-tab-content active" data-content="font">
+        <div class="text-input-row">
+          <input
+            type="text"
+            id="textInput"
+            placeholder="Введите текст..."
+            maxlength="100"
+          />
+        </div>
+        <div class="font-row">
+          <button class="font-btn" data-font="Impact">Impact</button>
+          <button class="font-btn" data-font="Arial">Arial</button>
+          <button class="font-btn" data-font="Times New Roman">Times</button>
+          <button class="font-btn" data-font="Courier New">Courier</button>
+        </div>
+        <div class="row-control">
+          <span>Размер</span>
+          <div class="mini-stepper">
+            <button
+              class="mini-step-btn"
+              data-text-prop="fontSize"
+              data-dir="-1"
+            >
+              −
+            </button>
+            <span id="valFontSize">48</span>
+            <button
+              class="mini-step-btn"
+              data-text-prop="fontSize"
+              data-dir="1"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-tab-content" data-content="color">
+        <div class="color-row">
+          <button
+            class="color-swatch"
+            data-color="#ffffff"
+            style="background: #ffffff"
+          ></button>
+          <button
+            class="color-swatch"
+            data-color="#000000"
+            style="background: #000000"
+          ></button>
+          <button
+            class="color-swatch"
+            data-color="#ff8c42"
+            style="background: #ff8c42"
+          ></button>
+          <button
+            class="color-swatch"
+            data-color="#ff0040"
+            style="background: #ff0040"
+          ></button>
+          <button
+            class="color-swatch"
+            data-color="#00d9ff"
+            style="background: #00d9ff"
+          ></button>
+          <button
+            class="color-swatch"
+            data-color="#00ff88"
+            style="background: #00ff88"
+          ></button>
+          <button
+            class="color-swatch"
+            data-color="#ffff00"
+            style="background: #ffff00"
+          ></button>
+          <button
+            class="color-swatch"
+            data-color="#ff00ff"
+            style="background: #ff00ff"
+          ></button>
+        </div>
+        <button class="btn-mini" id="autoContrastBtn">🎨 Авто-контраст</button>
+      </div>
+
+      <div class="text-tab-content" data-content="stroke">
+        <div class="row-control">
+          <span>Включить обводку</span>
+          <button class="toggle-btn" id="strokeToggle">ВКЛ</button>
+        </div>
+        <div class="color-row">
+          <button
+            class="color-swatch"
+            data-stroke-color="#000000"
+            style="background: #000000"
+          ></button>
+          <button
+            class="color-swatch"
+            data-stroke-color="#ffffff"
+            style="background: #ffffff"
+          ></button>
+          <button
+            class="color-swatch"
+            data-stroke-color="#ff0000"
+            style="background: #ff0000"
+          ></button>
+          <button
+            class="color-swatch"
+            data-stroke-color="#0066ff"
+            style="background: #0066ff"
+          ></button>
+        </div>
+        <div class="row-control">
+          <span>Толщина</span>
+          <div class="mini-stepper">
+            <button
+              class="mini-step-btn"
+              data-text-prop="strokeWidth"
+              data-dir="-1"
+            >
+              −
+            </button>
+            <span id="valStrokeWidth">4</span>
+            <button
+              class="mini-step-btn"
+              data-text-prop="strokeWidth"
+              data-dir="1"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-tab-content" data-content="shadow">
+        <div class="row-control">
+          <span>Включить тень</span>
+          <button class="toggle-btn" id="shadowToggle">ВЫКЛ</button>
+        </div>
+        <div class="row-control">
+          <span>Смещение</span>
+          <div class="mini-stepper">
+            <button
+              class="mini-step-btn"
+              data-text-prop="shadowOffset"
+              data-dir="-1"
+            >
+              −
+            </button>
+            <span id="valShadowOffset">4</span>
+            <button
+              class="mini-step-btn"
+              data-text-prop="shadowOffset"
+              data-dir="1"
+            >
+              +
+            </button>
+          </div>
+        </div>
+        <div class="row-control">
+          <span>Размытие</span>
+          <div class="mini-stepper">
+            <button
+              class="mini-step-btn"
+              data-text-prop="shadowBlur"
+              data-dir="-1"
+            >
+              −
+            </button>
+            <span id="valShadowBlur">4</span>
+            <button
+              class="mini-step-btn"
+              data-text-prop="shadowBlur"
+              data-dir="1"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-editor-actions">
+        <button class="btn-danger" id="deleteTextBtn">🗑 Удалить</button>
+        <button class="btn-primary" id="doneTextBtn">✓ Готово</button>
+      </div>
     </div>
 
     <script src="js/app.js"></script>
