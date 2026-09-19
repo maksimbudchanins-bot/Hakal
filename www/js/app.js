@@ -93,7 +93,6 @@ function showConfirm(
       confirmCancel.removeEventListener("click", onCancel);
       confirmOverlay.style.display = "none";
     };
-
     const onOk = () => {
       cleanup();
       resolve(true);
@@ -109,7 +108,6 @@ function showConfirm(
 }
 
 let toastTimeout = null;
-
 function showToast(message, duration = 2000) {
   log("Toast: " + message);
   if (toastTimeout) clearTimeout(toastTimeout);
@@ -133,7 +131,7 @@ const overlayCtx = overlayCanvas.getContext("2d");
 const placeholder = document.getElementById("placeholder");
 const fileInput = document.getElementById("fileInput");
 const downloadBtn = document.getElementById("downloadBtn");
-const resetBtn = document.getElementById("resetBtn");
+const resetEffectsBtn = document.getElementById("resetEffectsBtn");
 const canvasContainer = document.getElementById("canvasContainer");
 const canvasHint = document.getElementById("canvasHint");
 const coachTooltip = document.getElementById("coachTooltip");
@@ -142,6 +140,8 @@ const fullscreenCanvas = document.getElementById("fullscreenCanvas");
 const fullscreenClose = document.getElementById("fullscreenClose");
 
 const addTextBtn = document.getElementById("addTextBtn");
+const editLastTextBtn = document.getElementById("editLastTextBtn");
+const deleteAllTextsBtn = document.getElementById("deleteAllTextsBtn");
 const addAnotherTextBtn = document.getElementById("addAnotherTextBtn");
 const textEditor = document.getElementById("textEditor");
 const textEditorTitle = document.getElementById("textEditorTitle");
@@ -174,11 +174,8 @@ const allInputs = [
 let originalImage = new Image();
 let isImageLoaded = false;
 let isTextEditing = false;
-
-// МНОЖЕСТВЕННЫЕ ТЕКСТЫ
 let texts = [];
 let activeTextIndex = -1;
-
 const holdTimers = {};
 
 // ============================================
@@ -277,6 +274,16 @@ function clearAllHoldTimers() {
   });
 }
 
+// Снять фокус с активного элемента (чтобы клавиатура не вылезала)
+function blurActiveInput() {
+  if (
+    document.activeElement &&
+    typeof document.activeElement.blur === "function"
+  ) {
+    document.activeElement.blur();
+  }
+}
+
 document.querySelectorAll(".stepper").forEach((stepper) => {
   const targetId = stepper.dataset.target;
   const input = document.getElementById(targetId);
@@ -300,6 +307,7 @@ document.querySelectorAll(".stepper").forEach((stepper) => {
   };
 
   const startHold = (dir) => {
+    blurActiveInput(); // ← Убираем фокус с поля ввода
     stopHold(targetId);
     changeValue(dir);
     const min = parseFloat(input.dataset.min) || 0;
@@ -475,13 +483,12 @@ function applyEffects() {
 }
 
 // ============================================
-// ОТРИСОВКА ВСЕХ ТЕКСТОВ
+// ОТРИСОВКА ТЕКСТОВ
 // ============================================
-function drawTextShape(ctx2d, t, isActive) {
+function drawTextShape(ctx2d, t) {
   ctx2d.save();
   ctx2d.translate(t.x, t.y);
   ctx2d.rotate((t.rotation * Math.PI) / 180);
-
   ctx2d.font = `${t.fontSize}px "${t.font}", Arial, sans-serif`;
   ctx2d.textAlign = "center";
   ctx2d.textBaseline = "middle";
@@ -508,12 +515,10 @@ function drawTextShape(ctx2d, t, isActive) {
   ctx2d.fillStyle = t.color;
   ctx2d.fillText(t.value, 0, 0);
 
-  // Сброс тени
   ctx2d.shadowColor = "transparent";
   ctx2d.shadowBlur = 0;
   ctx2d.shadowOffsetX = 0;
   ctx2d.shadowOffsetY = 0;
-
   ctx2d.restore();
 }
 
@@ -524,11 +529,8 @@ function redrawAllTexts() {
 
   texts.forEach((t, index) => {
     if (!t.value) return;
+    drawTextShape(overlayCtx, t);
 
-    // Отрисовка текста
-    drawTextShape(overlayCtx, t, false);
-
-    // Активный текст — рамка
     if (index === activeTextIndex && isTextEditing) {
       overlayCtx.save();
       overlayCtx.translate(t.x, t.y);
@@ -550,10 +552,70 @@ function redrawAllTexts() {
         textWidth + padding * 2,
         textHeight + padding * 2,
       );
-
       overlayCtx.restore();
     }
   });
+
+  if (editLastTextBtn) {
+    editLastTextBtn.style.display = texts.length > 0 ? "block" : "none";
+  }
+  if (deleteAllTextsBtn) {
+    deleteAllTextsBtn.style.display = texts.length > 0 ? "block" : "none";
+  }
+}
+
+// ============================================
+// ПОИСК ТЕКСТА ПОД ТОЧКОЙ
+// ============================================
+function findTextAtPoint(x, y) {
+  for (let i = texts.length - 1; i >= 0; i--) {
+    const t = texts[i];
+    if (!t.value) continue;
+
+    const dx = x - t.x;
+    const dy = y - t.y;
+    const angle = -(t.rotation * Math.PI) / 180;
+    const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+    const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
+
+    const textWidth = t.value.length * t.fontSize * 0.55;
+    const textHeight = t.fontSize * 1.2;
+
+    if (
+      Math.abs(rx) < textWidth / 2 + 15 &&
+      Math.abs(ry) < textHeight / 2 + 15
+    ) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function setActiveText(index) {
+  activeTextIndex = index;
+  if (index < 0) return;
+
+  const t = texts[index];
+  textEditorTitle.innerText = `Текст #${index + 1}`;
+
+  textInput.value = t.value;
+  document.getElementById("valFontSize").innerText = t.fontSize;
+  document.getElementById("valStrokeWidth").innerText = t.strokeWidth;
+  document.getElementById("valShadowOffset").innerText = t.shadowOffset;
+  document.getElementById("valShadowBlur").innerText = t.shadowBlur;
+  document.getElementById("valRotation").innerText =
+    Math.round(t.rotation) + "°";
+
+  strokeToggle.classList.toggle("active", t.strokeEnabled);
+  shadowToggle.classList.toggle("active", t.shadowEnabled);
+  strokeToggle.innerText = t.strokeEnabled ? "ВКЛ" : "ВЫКЛ";
+  shadowToggle.innerText = t.shadowEnabled ? "ВКЛ" : "ВЫКЛ";
+
+  document.querySelectorAll(".font-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.font === t.font);
+  });
+
+  redrawAllTexts();
 }
 
 // ============================================
@@ -593,62 +655,6 @@ function getPinchAngle(e) {
   return Math.atan2(dy, dx) * (180 / Math.PI);
 }
 
-// Поиск текста под пальцем
-function findTextAtPoint(x, y) {
-  for (let i = texts.length - 1; i >= 0; i--) {
-    const t = texts[i];
-    if (!t.value) continue;
-
-    // Обратное преобразование: смещаем точку в систему координат текста
-    const dx = x - t.x;
-    const dy = y - t.y;
-    const angle = -(t.rotation * Math.PI) / 180;
-    const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
-    const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
-
-    // Примерные размеры текста
-    const textWidth = t.value.length * t.fontSize * 0.55;
-    const textHeight = t.fontSize * 1.2;
-
-    if (
-      Math.abs(rx) < textWidth / 2 + 10 &&
-      Math.abs(ry) < textHeight / 2 + 10
-    ) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-function setActiveText(index) {
-  activeTextIndex = index;
-  if (index < 0) return;
-
-  const t = texts[index];
-  textEditorTitle.innerText = `Текст #${index + 1}`;
-
-  // Обновляем UI
-  textInput.value = t.value;
-  document.getElementById("valFontSize").innerText = t.fontSize;
-  document.getElementById("valStrokeWidth").innerText = t.strokeWidth;
-  document.getElementById("valShadowOffset").innerText = t.shadowOffset;
-  document.getElementById("valShadowBlur").innerText = t.shadowBlur;
-  document.getElementById("valRotation").innerText =
-    Math.round(t.rotation) + "°";
-
-  strokeToggle.classList.toggle("active", t.strokeEnabled);
-  shadowToggle.classList.toggle("active", t.shadowEnabled);
-  strokeToggle.innerText = t.strokeEnabled ? "ВКЛ" : "ВЫКЛ";
-  shadowToggle.innerText = t.shadowEnabled ? "ВКЛ" : "ВЫКЛ";
-
-  document.querySelectorAll(".font-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.font === t.font);
-  });
-
-  redrawAllTexts();
-}
-
-// Touch-события на overlay
 overlayCanvas.addEventListener(
   "touchstart",
   (e) => {
@@ -665,7 +671,6 @@ overlayCanvas.addEventListener(
       const foundIndex = findTextAtPoint(pos.x, pos.y);
 
       if (foundIndex >= 0 && foundIndex !== activeTextIndex) {
-        // Тапнули по другому тексту — переключаемся
         log("Переключаюсь на текст #" + (foundIndex + 1));
         setActiveText(foundIndex);
       }
@@ -695,7 +700,6 @@ overlayCanvas.addEventListener(
   (e) => {
     if (!isTextEditing || activeTextIndex < 0) return;
     e.preventDefault();
-
     const t = texts[activeTextIndex];
 
     if (isDraggingText && e.touches.length === 1) {
@@ -728,7 +732,6 @@ overlayCanvas.addEventListener(
           vibrate(10);
         }
       }
-
       redrawAllTexts();
     }
   },
@@ -741,7 +744,6 @@ overlayCanvas.addEventListener("touchend", () => {
   initialPinchAngle = 0;
 });
 
-// Mouse для ПК
 overlayCanvas.addEventListener("mousedown", (e) => {
   if (!isImageLoaded || !isTextEditing) return;
   const pos = getTouchPos(e, overlayCanvas);
@@ -802,7 +804,6 @@ addTextBtn.addEventListener("click", () => {
     showAlert("Сначала загрузите картинку!", "warning");
     return;
   }
-
   log("Добавляю текст");
   const index = createNewText();
   setActiveText(index);
@@ -820,9 +821,43 @@ addTextBtn.addEventListener("click", () => {
       }
     }, 5000);
   }
-
   redrawAllTexts();
   showToast("💬 Текст добавлен");
+});
+
+editLastTextBtn.addEventListener("click", () => {
+  if (texts.length === 0) return;
+  const lastIndex = texts.length - 1;
+  log("Открываю редактор для последнего текста #" + (lastIndex + 1));
+  setActiveText(lastIndex);
+  textEditor.style.display = "block";
+  isTextEditing = true;
+  document.body.classList.add("text-editing");
+  coachTooltip.style.display = "none";
+  redrawAllTexts();
+  showToast("✏️ Редактируем текст #" + (lastIndex + 1));
+});
+
+deleteAllTextsBtn.addEventListener("click", async () => {
+  if (texts.length === 0) return;
+  const confirmed = await showConfirm(`Удалить все тексты (${texts.length})?`, {
+    confirmText: "Удалить",
+    cancelText: "Отмена",
+    danger: true,
+  });
+  if (!confirmed) return;
+
+  log("Удаляю все тексты");
+  texts = [];
+  activeTextIndex = -1;
+  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  textEditor.style.display = "none";
+  isTextEditing = false;
+  document.body.classList.remove("text-editing");
+  coachTooltip.style.display = "none";
+
+  redrawAllTexts();
+  showToast("🗑 Все тексты удалены");
 });
 
 addAnotherTextBtn.addEventListener("click", () => {
@@ -855,7 +890,6 @@ document.querySelectorAll(".font-btn").forEach((btn) => {
   });
 });
 
-// МИНИ-СТЕППЕРЫ
 const miniHoldTimers = {};
 
 function changeTextProp(btn) {
@@ -889,6 +923,7 @@ document.querySelectorAll(".mini-step-btn").forEach((btn) => {
   const timerKey = "mini_" + btn.dataset.textProp + "_" + btn.dataset.dir;
 
   const startHold = () => {
+    blurActiveInput(); // ← Убираем фокус с поля ввода
     stopMiniHold(timerKey);
     changeTextProp(btn);
     miniHoldTimers[timerKey] = {
@@ -1019,6 +1054,7 @@ document.querySelectorAll(".text-tab").forEach((tab) => {
 
 doneTextBtn.addEventListener("click", () => {
   log("Закрываю редактор текста");
+  blurActiveInput();
   textEditor.style.display = "none";
   isTextEditing = false;
   activeTextIndex = -1;
@@ -1030,12 +1066,10 @@ doneTextBtn.addEventListener("click", () => {
 
 deleteTextBtn.addEventListener("click", async () => {
   if (activeTextIndex < 0) return;
-
   const confirmed = await showConfirm(
     `Удалить текст #${activeTextIndex + 1}?`,
     { confirmText: "Удалить", cancelText: "Отмена", danger: true },
   );
-
   if (!confirmed) return;
 
   log("Удаляю текст #" + (activeTextIndex + 1));
@@ -1049,7 +1083,6 @@ deleteTextBtn.addEventListener("click", async () => {
   } else {
     setActiveText(Math.min(activeTextIndex, texts.length - 1));
   }
-
   redrawAllTexts();
   showToast("🗑 Текст удалён");
 });
@@ -1075,9 +1108,29 @@ function closeFullscreen() {
   fullscreenPreview.style.display = "none";
 }
 
-canvasContainer.addEventListener("click", () => {
+// ============================================
+// ТАП ПО CANVAS
+// ============================================
+canvasContainer.addEventListener("click", (e) => {
   if (isTextEditing) return;
-  openFullscreen();
+  if (!isImageLoaded) return;
+
+  const pos = getTouchPos(e, overlayCanvas);
+  const foundIndex = findTextAtPoint(pos.x, pos.y);
+
+  if (foundIndex >= 0) {
+    log("Тап по тексту #" + (foundIndex + 1) + " → открываю редактор");
+    setActiveText(foundIndex);
+    textEditor.style.display = "block";
+    isTextEditing = true;
+    document.body.classList.add("text-editing");
+    coachTooltip.style.display = "none";
+    redrawAllTexts();
+    showToast("✏️ Редактируем текст #" + (foundIndex + 1));
+  } else {
+    log("Тап по пустому месту → полный экран");
+    openFullscreen();
+  }
 });
 
 fullscreenPreview.addEventListener("click", (e) => {
@@ -1092,16 +1145,16 @@ fullscreenClose.addEventListener("click", (e) => {
 });
 
 // ============================================
-// ОБЩИЕ КНОПКИ
+// СБРОС ЭФФЕКТОВ
 // ============================================
-resetBtn.addEventListener("click", async () => {
+resetEffectsBtn.addEventListener("click", async () => {
   const confirmed = await showConfirm(
-    "Сбросить все настройки и удалить все тексты?",
-    { confirmText: "Сбросить", cancelText: "Отмена", danger: true },
+    "Сбросить все эффекты? Тексты останутся.",
+    { confirmText: "Сбросить", cancelText: "Отмена" },
   );
   if (!confirmed) return;
 
-  log("Сброс настроек");
+  log("Сброс эффектов");
   clearAllHoldTimers();
   setInputValue("shakal", 1);
   setInputValue("brightness", 100);
@@ -1111,18 +1164,13 @@ resetBtn.addEventListener("click", async () => {
   setInputValue("glitch", 0);
   setInputValue("chromatic", 0);
 
-  texts = [];
-  activeTextIndex = -1;
-  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-  textEditor.style.display = "none";
-  isTextEditing = false;
-  document.body.classList.remove("text-editing");
-  coachTooltip.style.display = "none";
-
   applyEffects();
-  showToast("🔄 Сброшено");
+  showToast("🎨 Эффекты сброшены");
 });
 
+// ============================================
+// СКАЧАТЬ
+// ============================================
 downloadBtn.addEventListener("click", async () => {
   if (!isImageLoaded) {
     showAlert("Сначала загрузите картинку!", "warning");

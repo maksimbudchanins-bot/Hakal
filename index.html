@@ -24,7 +24,7 @@
         <canvas id="imageCanvas"></canvas>
         <canvas id="overlayCanvas" class="overlay-canvas"></canvas>
         <div class="canvas-hint" id="canvasHint" style="display: none">
-          👆 Тап — на весь экран
+          👆 Тап по тексту — редактировать
         </div>
 
         <div class="coach-tooltip" id="coachTooltip" style="display: none">
@@ -36,9 +36,15 @@
         <input type="file" id="fileInput" accept="image/*" />
 
         <div class="top-buttons">
-          <label for="fileInput" class="btn" id="uploadBtn">📁 Загрузить</label>
-          <button class="btn btn-secondary" id="resetBtn">🔄 Сброс</button>
-          <button class="btn btn-secondary" id="downloadBtn">💾 Скачать</button>
+          <label for="fileInput" class="btn" id="uploadBtn"
+            >📁<br />Загрузить</label
+          >
+          <button class="btn btn-secondary" id="resetEffectsBtn">
+            🎨<br />Сброс эффектов
+          </button>
+          <button class="btn btn-secondary" id="downloadBtn">
+            💾<br />Скачать
+          </button>
         </div>
 
         <div class="presets">
@@ -50,6 +56,20 @@
 
         <button class="btn btn-text-tool" id="addTextBtn">
           💬 Добавить текст
+        </button>
+        <button
+          class="btn btn-text-tool"
+          id="editLastTextBtn"
+          style="display: none"
+        >
+          ✏️ Редактировать текст
+        </button>
+        <button
+          class="btn btn-danger-full"
+          id="deleteAllTextsBtn"
+          style="display: none"
+        >
+          🗑 Удалить тексты
         </button>
 
         <div class="control-group">
@@ -205,6 +225,10 @@
             id="textInput"
             placeholder="Введите текст..."
             maxlength="100"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
           />
         </div>
         <div class="font-row">
@@ -412,7 +436,6 @@
       </div>
     </div>
 
-    <!-- КАСТОМНЫЙ АЛЕРТ -->
     <div
       class="custom-alert-overlay"
       id="customAlertOverlay"
@@ -427,7 +450,6 @@
       </div>
     </div>
 
-    <!-- КАСТОМНЫЙ CONFIRM -->
     <div
       class="custom-confirm-overlay"
       id="customConfirmOverlay"
@@ -449,7 +471,6 @@
       </div>
     </div>
 
-    <!-- TOAST -->
     <div class="toast" id="toast" style="display: none"></div>
 
     <script src="js/app.js"></script>

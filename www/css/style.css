@@ -47,8 +47,12 @@ main {
   align-items: center;
 }
 
+/* ============================================
+   STICKY CANVAS
+   ============================================ */
 .canvas-container {
-  position: relative;
+  position: sticky;
+  top: 0;
   width: 100%;
   background: #000;
   border-radius: 16px;
@@ -143,6 +147,7 @@ body.text-editing {
 .control-group {
   margin-bottom: 12px;
 }
+
 .control-group label {
   display: block;
   font-size: 14px;
@@ -172,6 +177,7 @@ input[type="file"] {
   transition:
     opacity 0.15s ease,
     transform 0.15s ease;
+  line-height: 1.2;
 }
 
 .btn:active {
@@ -189,19 +195,33 @@ input[type="file"] {
   background: linear-gradient(135deg, #4a9eff, #2d7dd2);
 }
 
+/* ============================================
+   ВЕРХНИЕ КНОПКИ (3 в ряд, адаптивные)
+   ============================================ */
 .top-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
   margin-bottom: 15px;
 }
+
 .top-buttons .btn {
   margin-bottom: 0;
-  padding: 10px 6px;
-  font-size: 13px;
+  padding: 10px 4px;
+  font-size: 11px;
   border-radius: 10px;
+  line-height: 1.3;
+  word-break: break-word;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
+/* ============================================
+   STEPPERS
+   ============================================ */
 .stepper {
   display: flex;
   align-items: center;
@@ -239,6 +259,7 @@ input[type="file"] {
   transform: scale(0.9);
   opacity: 0.8;
 }
+
 .step-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
@@ -267,14 +288,17 @@ input[type="file"] {
   color: #5a5a5a;
   text-align: center;
 }
+
 .placeholder-icon {
   font-size: 48px;
   margin-bottom: 8px;
   opacity: 0.6;
 }
+
 .placeholder-text {
   font-size: 14px;
 }
+
 .placeholder.hidden {
   display: none;
 }
@@ -306,6 +330,9 @@ input[type="file"] {
   color: var(--accent);
 }
 
+/* ============================================
+   FULLSCREEN
+   ============================================ */
 .fullscreen-preview {
   position: fixed;
   top: 0;
@@ -361,6 +388,9 @@ input[type="file"] {
   transform: scale(0.9);
 }
 
+/* ============================================
+   TEXT EDITOR
+   ============================================ */
 .text-editor {
   position: fixed;
   bottom: 0;
@@ -458,6 +488,7 @@ input[type="file"] {
 .text-tab-content {
   display: none;
 }
+
 .text-tab-content.active {
   display: block;
 }
@@ -575,6 +606,7 @@ input[type="file"] {
 .color-swatch:active {
   transform: scale(0.9);
 }
+
 .color-swatch.active {
   border-color: var(--accent);
   transform: scale(1.1);
@@ -663,9 +695,23 @@ input[type="file"] {
 }
 
 /* ============================================
+   КНОПКА УДАЛЕНИЯ ВСЕХ ТЕКСТОВ
+   ============================================ */
+.btn-danger-full {
+  background: transparent;
+  border: 2px solid var(--danger);
+  color: var(--danger);
+  margin-bottom: 15px;
+}
+
+.btn-danger-full:active {
+  background: rgba(255, 59, 59, 0.15);
+  transform: scale(0.98);
+}
+
+/* ============================================
    КАСТОМНЫЙ АЛЕРТ
    ============================================ */
-
 .custom-alert-overlay,
 .custom-confirm-overlay {
   position: fixed;
@@ -778,7 +824,6 @@ input[type="file"] {
 /* ============================================
    TOAST
    ============================================ */
-
 .toast {
   position: fixed;
   bottom: 30px;
