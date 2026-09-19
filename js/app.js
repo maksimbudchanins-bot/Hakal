@@ -1,4 +1,17 @@
-// Заглушка для Telegram (чтобы код не падал вне Mini App)
+// ============================================
+// НАСТРОЙКИ ОТЛАДКИ
+// ============================================
+const DEBUG = true; // ← поставь false перед релизом
+
+function log(message) {
+  if (DEBUG) console.log("🔍 [Shakal]", message);
+}
+
+log("========== Приложение запущено ==========");
+
+// ============================================
+// ЗАГЛУШКА ДЛЯ TELEGRAM
+// ============================================
 const tg = window.Telegram?.WebApp || {
   expand: () => {},
   close: () => {},
@@ -10,9 +23,9 @@ const tg = window.Telegram?.WebApp || {
 
 if (window.Telegram?.WebApp) {
   tg.expand();
-  console.log("✅ Telegram WebApp version:", tg.version);
+  log("✅ Telegram WebApp version: " + tg.version);
 } else {
-  console.log("📱 Запущено вне Telegram (APK или браузер)");
+  log("📱 Запущено вне Telegram (APK или браузер)");
 }
 
 const isRealTelegram = !!(tg && tg.initData);
@@ -27,33 +40,40 @@ function safeAlert(message) {
   alert(message);
 }
 
+// ============================================
 // DOM
+// ============================================
 const canvas = document.getElementById("imageCanvas");
 const ctx = canvas.getContext("2d");
 const placeholder = document.getElementById("placeholder");
 const fileInput = document.getElementById("fileInput");
 const downloadBtn = document.getElementById("downloadBtn");
 const resetBtn = document.getElementById("resetBtn");
+const originalBtn = document.getElementById("originalBtn");
 
 const shakalSlider = document.getElementById("shakal");
 const brightnessSlider = document.getElementById("brightness");
 const contrastSlider = document.getElementById("contrast");
 const saturateSlider = document.getElementById("saturate");
+const noiseSlider = document.getElementById("noise");
+const glitchSlider = document.getElementById("glitch");
 const chromaticSlider = document.getElementById("chromatic");
 
 let originalImage = new Image();
 let isImageLoaded = false;
+let isShowingOriginal = false;
 
 // ============================================
 // ПРЕСЕТЫ
 // ============================================
-
 const PRESETS = {
   meme: {
     shakal: 12,
     brightness: 110,
     contrast: 130,
     saturate: 140,
+    noise: 15,
+    glitch: 10,
     chromatic: 3,
   },
   acid: {
@@ -61,6 +81,8 @@ const PRESETS = {
     brightness: 120,
     contrast: 160,
     saturate: 200,
+    noise: 0,
+    glitch: 0,
     chromatic: 8,
   },
   vintage: {
@@ -68,6 +90,8 @@ const PRESETS = {
     brightness: 90,
     contrast: 85,
     saturate: 60,
+    noise: 30,
+    glitch: 0,
     chromatic: 2,
   },
   glitch: {
@@ -75,6 +99,8 @@ const PRESETS = {
     brightness: 100,
     contrast: 150,
     saturate: 180,
+    noise: 10,
+    glitch: 60,
     chromatic: 15,
   },
 };
@@ -84,10 +110,14 @@ document.querySelectorAll(".preset-btn").forEach((btn) => {
     const preset = PRESETS[btn.dataset.preset];
     if (!preset) return;
 
+    log("Применяю пресет: " + btn.dataset.preset);
+
     shakalSlider.value = preset.shakal;
     brightnessSlider.value = preset.brightness;
     contrastSlider.value = preset.contrast;
     saturateSlider.value = preset.saturate;
+    noiseSlider.value = preset.noise;
+    glitchSlider.value = preset.glitch;
     chromaticSlider.value = preset.chromatic;
 
     updateLabels();
@@ -98,10 +128,11 @@ document.querySelectorAll(".preset-btn").forEach((btn) => {
 // ============================================
 // ЗАГРУЗКА КАРТИНКИ
 // ============================================
-
 fileInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
+  log("Файл выбран: " + file.name);
+
   const reader = new FileReader();
   reader.onload = (event) => {
     originalImage.src = event.target.result;
@@ -115,18 +146,20 @@ originalImage.onload = () => {
   canvas.height = originalImage.height;
   canvas.style.display = "block";
   placeholder.classList.add("hidden");
+  log("Картинка загружена: " + canvas.width + "×" + canvas.height);
   applyEffects();
 };
 
 // ============================================
 // ПОЛЗУНКИ
 // ============================================
-
 const sliders = [
   shakalSlider,
   brightnessSlider,
   contrastSlider,
   saturateSlider,
+  noiseSlider,
+  glitchSlider,
   chromaticSlider,
 ];
 sliders.forEach((slider) => {
@@ -141,13 +174,55 @@ function updateLabels() {
   document.getElementById("valBrightness").innerText = brightnessSlider.value;
   document.getElementById("valContrast").innerText = contrastSlider.value;
   document.getElementById("valSaturate").innerText = saturateSlider.value;
+  document.getElementById("valNoise").innerText = noiseSlider.value;
+  document.getElementById("valGlitch").innerText = glitchSlider.value;
   document.getElementById("valChromatic").innerText = chromaticSlider.value;
+}
+
+// ============================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================
+
+// Эффект шума
+function applyNoise(canvas, amount) {
+  if (amount <= 0) return;
+  const ctx = canvas.getContext("2d");
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  const noiseAmount = amount * 2.55;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const noise = (Math.random() - 0.5) * noiseAmount;
+    data[i] = Math.max(0, Math.min(255, data[i] + noise));
+    data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
+    data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// Эффект глитча (VHS-полосы)
+function applyGlitch(canvas, amount) {
+  if (amount <= 0) return;
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  const numBands = Math.floor(amount / 3) + 3;
+
+  for (let i = 0; i < numBands; i++) {
+    const y = Math.floor(Math.random() * h);
+    const bandHeight = Math.floor(Math.random() * 20) + 5;
+    const shift = Math.floor((Math.random() - 0.5) * amount * 1.5);
+
+    const band = ctx.getImageData(0, y, w, Math.min(bandHeight, h - y));
+    ctx.clearRect(0, y, w, bandHeight);
+    ctx.putImageData(band, shift, y);
+  }
 }
 
 // ============================================
 // ОСНОВНАЯ МАГИЯ
 // ============================================
-
 function applyEffects() {
   if (!isImageLoaded) return;
 
@@ -155,6 +230,8 @@ function applyEffects() {
   const brightness = brightnessSlider.value;
   const contrast = contrastSlider.value;
   const saturate = saturateSlider.value;
+  const noise = parseInt(noiseSlider.value);
+  const glitch = parseInt(glitchSlider.value);
   const chromatic = parseInt(chromaticSlider.value);
 
   // Шаг 1. Пикселизация
@@ -184,7 +261,17 @@ function applyEffects() {
   colorCtx.drawImage(pixelCanvas, 0, 0);
   colorCtx.filter = "none";
 
-  // Шаг 3. Хроматика
+  // Шаг 3. Шум
+  if (noise > 0) {
+    applyNoise(colorCanvas, noise);
+  }
+
+  // Шаг 4. Глитч
+  if (glitch > 0) {
+    applyGlitch(colorCanvas, glitch);
+  }
+
+  // Шаг 5. Хроматика + вывод
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (chromatic > 0) {
@@ -208,6 +295,11 @@ function applyEffects() {
   } else {
     ctx.drawImage(colorCanvas, 0, 0);
   }
+
+  // Показываем оригинал если зажата кнопка
+  if (isShowingOriginal) {
+    ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+  }
 }
 
 // ============================================
@@ -215,24 +307,69 @@ function applyEffects() {
 // ============================================
 
 resetBtn.addEventListener("click", () => {
+  log("Сброс настроек");
   shakalSlider.value = 1;
   brightnessSlider.value = 100;
   contrastSlider.value = 100;
   saturateSlider.value = 100;
+  noiseSlider.value = 0;
+  glitchSlider.value = 0;
   chromaticSlider.value = 0;
   updateLabels();
   applyEffects();
 });
 
+// Кнопка "Оригинал" — зажал, видишь исходник
+originalBtn.addEventListener("mousedown", () => {
+  if (!isImageLoaded) return;
+  isShowingOriginal = true;
+  log("Показываю оригинал");
+  applyEffects();
+});
+
+originalBtn.addEventListener("mouseup", () => {
+  if (!isImageLoaded) return;
+  isShowingOriginal = false;
+  log("Возвращаю эффект");
+  applyEffects();
+});
+
+originalBtn.addEventListener("mouseleave", () => {
+  if (!isImageLoaded) return;
+  if (isShowingOriginal) {
+    isShowingOriginal = false;
+    applyEffects();
+  }
+});
+
+// Для тач-устройств
+originalBtn.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  if (!isImageLoaded) return;
+  isShowingOriginal = true;
+  log("Показываю оригинал (touch)");
+  applyEffects();
+});
+
+originalBtn.addEventListener("touchend", (e) => {
+  e.preventDefault();
+  if (!isImageLoaded) return;
+  isShowingOriginal = false;
+  log("Возвращаю эффект (touch)");
+  applyEffects();
+});
+
+// Скачивание
 downloadBtn.addEventListener("click", async () => {
   if (!isImageLoaded) {
     safeAlert("Сначала загрузите картинку!");
     return;
   }
 
+  log("Начинаю сохранение...");
   const imageDataUrl = canvas.toDataURL("image/png");
 
-  // 1. Telegram — нативный метод
+  // Telegram
   if (
     isRealTelegram &&
     tg.isVersionAtLeast &&
@@ -240,62 +377,56 @@ downloadBtn.addEventListener("click", async () => {
     tg.downloadFile
   ) {
     try {
-      tg.downloadFile({
-        url: imageDataUrl,
-        file_name: "shakal_art.png",
-      });
+      tg.downloadFile({ url: imageDataUrl, file_name: "shakal_art.png" });
+      log("Сохранено через Telegram");
       return;
     } catch (err) {
-      console.warn("downloadFile не сработал:", err);
+      log("downloadFile не сработал: " + err);
     }
   }
 
-  // 2. Capacitor (APK на Android) — плагин Media
+  // Capacitor (APK)
   if (
     window.Capacitor &&
     window.Capacitor.Plugins &&
     window.Capacitor.Plugins.Media
   ) {
     const Media = window.Capacitor.Plugins.Media;
-
     try {
-      // Шаг 1. Создаём альбом "Shakal" (если уже есть — просто проигнорирует)
       try {
         await Media.createAlbum({ name: "Shakal" });
       } catch (e) {
-        // Альбом уже существует — это нормально
-        console.log("Альбом Shakal уже существует или создан ранее");
+        log("Альбом Shakal уже есть");
       }
 
-      // Шаг 2. Получаем список альбомов и находим наш по имени
       const { albums } = await Media.getAlbums();
-      console.log("Доступные альбомы:", albums);
-
       const shakalAlbum = albums.find((a) => a.name === "Shakal");
 
-      if (!shakalAlbum) {
+      if (shakalAlbum) {
+        await Media.savePhoto({
+          path: imageDataUrl,
+          albumIdentifier: shakalAlbum.identifier,
+        });
+        log("Сохранено в альбом Shakal");
+        safeAlert("✅ Картинка сохранена в Галерею!");
+      } else {
+        log("Альбом Shakal не найден");
         safeAlert("❌ Не удалось найти альбом Shakal");
-        return;
       }
-
-      // Шаг 3. Сохраняем фото в найденный альбом
-      await Media.savePhoto({
-        path: imageDataUrl,
-        albumIdentifier: shakalAlbum.identifier,
-      });
-
-      safeAlert("✅ Картинка сохранена в альбом Shakal!");
       return;
     } catch (err) {
-      console.error("Ошибка при сохранении:", err);
+      log("Ошибка Media: " + err);
       safeAlert("❌ Ошибка: " + (err.message || err));
       return;
     }
   }
 
-  // 3. Fallback для браузера — обычное скачивание
+  // Браузер
+  log("Fallback: обычное скачивание");
   const link = document.createElement("a");
   link.download = "shakal_art.png";
   link.href = imageDataUrl;
   link.click();
 });
+
+log("========== Все обработчики навешаны ==========");

@@ -245,3 +245,19 @@ input[type="range"]:focus {
   transform: scale(0.95);
   background: rgba(82, 136, 193, 0.15);
 }
+
+/* ============================================
+   КНОПКА ОРИГИНАЛ
+   ============================================ */
+
+.btn-original {
+  background-color: transparent;
+  border: 1px solid #7a8a9c;
+  color: #7a8a9c;
+  margin-bottom: 15px;
+}
+
+.btn-original:active {
+  background-color: rgba(122, 138, 156, 0.2);
+  color: #a0b0c0;
+}
